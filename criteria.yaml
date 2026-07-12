@@ -1,0 +1,185 @@
+# OpenSourceScout — Fit Criteria (DRAFT v4 — edit freely)
+# ============================================================================
+# The flow (top → bottom):
+#   1. meta          — the goal + your projects
+#   2. definitions   — the words the judge reasons with
+#   3. assessment    — FACTS + WORTHINESS, judged in ONE pass   (LAYER 1)
+#   4. funnel        — ROUTING: where it lands                  (LAYER 2)
+#   5. capital_gate  — money: the LAST check, never the first
+#   6. judging       — who judges (idea vs repo)
+#   7. never_reject_on
+#
+#   ASSESS (facts + worthiness) → ROUTE → capital STATUS
+# ============================================================================
+
+meta:
+  purpose: >
+    For each candidate (a GitHub repo OR an idea): assess it (facts + whether
+    it's worth your time, in one pass), route it (independent / too_big / merge /
+    combined / rejected), then check capital last. Money is never the first filter.
+    Scope is NOT developer-tools-only — surface non-dev products too.
+  # Your private portfolio lives in config.local.yaml (git-ignored) — NOT here.
+  # criteria.yaml is the shareable framework; config.local.yaml is what only you see.
+  existing_projects: "→ config.local.yaml (git-ignored)"   # for MERGE + `strategic` payoff
+
+# ---------------------------------------------------------------------------
+# 2. DEFINITIONS
+# ---------------------------------------------------------------------------
+definitions:
+  one_person_project: >
+    Buildable AND maintainable by ONE person orchestrating agentic AI — not one
+    person alone. AI multiplies build capacity, so the scope bar is high. It
+    stops being one-person only when it needs a real ongoing team.
+
+  worth_doing: >
+    Non-trivial value with a plausible audience and room to differentiate, that
+    has AT LEAST ONE payoff AND passes your standards AND warrants the investment
+    AND is NOT a high-liability domain. NOT something already solved perfectly and free.
+
+  warrants_investment: >
+    Payoff must beat the SCARCE costs — which are NOT bulk build-tokens (cheap
+    models do that for ~nothing), but YOUR time and STRONG-model reasoning
+    (premium reasoning models). Spend build-tokens freely; guard time.
+
+  liability_risk: >
+    Judged by LIABILITY, not by domain label. HIGH = a wrong output causes legal,
+    financial, or physical harm, OR needs a license / regulatory compliance /
+    deep expert knowledge from day one (e.g. medical diagnosis, investment
+    advice, legal advice). A safe, non-advisory tool in the same broad area
+    (a budgeting UI, a workout logger) is LOW and fine. HIGH → not worth_doing.
+
+  durability: >
+    INFORMATIONAL only (see ai_at_run). Never a deciding factor.
+
+# ---------------------------------------------------------------------------
+# 3. ASSESSMENT — LAYER 1: facts + worthiness, in one pass.
+#    Output keeps facts and the verdict SEPARATE (facts get reused later).
+# ---------------------------------------------------------------------------
+assessment:
+
+  # ---- FACTS (recorded on every candidate) ----
+  facts:
+    category: >
+      ONE controlled category — for portfolio balance and where to monetize vs.
+      make a name. NOT developer-only. Seeds (settle your own list): [devtools,
+      automation, ai-tooling, data, content, productivity, education, creative,
+      consumer, infra].
+    payoff: >
+      One OR MORE of [commercial, reputation, learning, strategic]. >=1 required.
+      Applies to EVERY disposition:
+        commercial  = money.   reputation = a name.   learning = strategic_learning.
+        strategic   = usefulness to an existing project or a target (the typical
+                      payoff for merge / combined candidates).
+    provides_features: []            # THE parts-bin key
+    ai_at_build: none | helpful | required
+    ai_at_run:   none | optional | required
+    ai_note: >
+      CATEGORIZATION ONLY — ai_at_build / ai_at_run / emerging_class must NOT
+      affect worthiness or routing. Kept so non-AI products compete on equal
+      footing and aren't buried by the AI-runtime hype. (ai_at_build is ~always
+      'required' for you as a solo+AI dev; ai_at_run is the discriminating tag.)
+    emerging_class: >
+      Highlight if ai_at_build∈{helpful,required} AND ai_at_run==none →
+      "build-with-AI / run-AI-free". A spotlight, not a filter.
+    license:
+      name: ""
+      attribution_required: null
+      copyleft: null                 # must open-source your derivative → blocks a closed product
+      commercial_ok: null
+    capital_to_launch: zero | needs_money   # see capital_gate
+    paid_dependencies: []            # each becomes a mini-target (scout a free, ACTIVE alternative)
+
+  # ---- WORTHINESS (the test; judged against the disposition in question) ----
+  worthiness:
+    requires_all:
+      - "payoff: at least one of commercial / reputation / learning / strategic"
+      - "passes your standards (quality bar)"
+      - "warrants_investment (your time + premium reasoning — not bulk tokens)"
+      - "liability_risk is LOW (not a high-liability / regulated domain)"
+    judged_against: >
+      Always relative to a disposition — a single-feature repo can be 'not worth
+      doing INDEPENDENTLY' yet worth keeping as a part. So worthiness is asked
+      per funnel question, not once globally.
+    does_not_decide: [ai_at_build, ai_at_run, emerging_class, durability, capital]
+
+# ---------------------------------------------------------------------------
+# 4. FUNNEL — LAYER 2: routing (first YES wins; each question uses worthiness)
+# ---------------------------------------------------------------------------
+funnel:
+  - step: 1
+    disposition: independent
+    ask: "Worthy AND within one_person_project scope?"
+  - step: "1b"
+    disposition: too_big
+    ask: "Worthy but out of scope (needs a team)?  → defer / partner, don't force a merge."
+  - step: 2
+    disposition: merge
+    only_if_prior_no: true
+    ask: "Can it fold into an existing_project?"
+    modes: { as_is: "whole, unchanged", modify_fully: "rework to fit", harvest_parts: "take only the useful part(s)" }
+    harvest_type: >
+      code = lift the code (same language) · blueprint = reimplement the approach
+      (different language — a feature is what it DOES, not its language). Blueprint
+      also sidesteps copyleft: ideas/algorithms aren't copyrightable, only code is.
+      (Verify per case — not legal advice.)
+  - step: 3
+    disposition: combined
+    only_if_prior_no: true
+    ask: "Do its features help cover a TARGET when pooled with other (often rejected) repos?"
+    method: "Target-driven feature set-cover (match provides_features → needs_features). Output a build-kit."
+  - step: 4
+    disposition: rejected
+    only_if_prior_no: true
+    note: >
+      NOT a graveyard — retained as feature-tagged INVENTORY, which is both SUPPLY
+      (fills a target's gaps) and INSPIRATION (a compelling part can SEED a new
+      target — propose one, don't wait for it to be written).
+
+# ---------------------------------------------------------------------------
+# 5. CAPITAL GATE — the LAST check. Money is never the first filter.
+# ---------------------------------------------------------------------------
+capital_gate:
+  principle: >
+    Zero out-of-pocket BEFORE revenue. Launch on free tiers / hardware you own.
+    If it earns, reinvest THAT revenue to scale. Never spend your own money first.
+  capital_to_launch: >
+    Must be ZERO (free-tier / self-host). If it can't launch free → status parked_capital.
+  capital_to_scale: >
+    From revenue only — a good post-revenue problem, NOT a blocker to greenlighting.
+  status: active | parked_capital
+  parked_capital:
+    means: "Great, but can't launch free — revisit when funded, or when unblocked."
+    unblock: >
+      Each paid_dependency becomes a mini-target: scout a FREE alternative — and
+      check that alternative's ACTIVENESS (open-source AND paid projects get
+      abandoned). Found a free, maintained one → swap in → status active.
+
+# ---------------------------------------------------------------------------
+# 6. JUDGING  (idea vs repo)
+# ---------------------------------------------------------------------------
+judging:
+  idea: { method: ai_direct, why: "no metric system can judge a raw idea" }
+  repo:
+    method: automated_then_ai
+    automated: ["gather GitHub metadata", "run the funnel on hard facts"]
+    escalate_to_ai: { trigger: "borderline / after a constraint", agent: "agentic AI second opinion" }
+
+# ---------------------------------------------------------------------------
+# 7. NEVER REJECT ON
+# ---------------------------------------------------------------------------
+never_reject_on:
+  - spoken_language
+  - programming_language
+  - capital                # last check, never first (see capital_gate)
+  - ai_at_run              # AI-ness is categorization, not a merit or demerit
+
+# ---------------------------------------------------------------------------
+# Extra evidence the judge weighs (NOT gates)
+# ---------------------------------------------------------------------------
+factors_to_weigh:
+  - demand_and_audience
+  - differentiation / whitespace vs. existing solutions
+  - paywalled_incumbents_raise_worth
+  - maintenance_health / traction        # for the candidate AND its dependencies/free-alternatives
+  - dependency_health                    # abandoned deps (free or paid) are a real risk
+  - integration_effort                   # merge track

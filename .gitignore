@@ -1,0 +1,29 @@
+# --- Qodo (auto-regenerated) ---
+.qodo/
+
+# --- Private local config (your portfolio, standards, categories) ---
+config.local.yaml
+*.local.yaml
+*.local.yml
+
+# --- Private working data: your evaluations, targets, logs, index ---
+# Templates stay tracked (see the ! exceptions) so the framework ships with them.
+inbox/*
+!inbox/.gitkeep
+knowledge/repos/*
+!knowledge/repos/_TEMPLATE.md
+knowledge/targets/*
+!knowledge/targets/_TEMPLATE.md
+knowledge/topics/*
+!knowledge/topics/.gitkeep
+knowledge/daily/*
+!knowledge/daily/.gitkeep
+knowledge/combinations/
+index/
+
+# --- Orphan private brainstorm (names your projects) ---
+project_enhancement_ideas.md
+
+# --- OS / editor cruft ---
+.DS_Store
+Thumbs.db
