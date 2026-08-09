@@ -1,5 +1,9 @@
-# --- Qodo (auto-regenerated) ---
 .qodo/
+.claude
+
+# --- Secrets: your GitHub token. .env is private; .env.example ships as the template. ---
+.env
+!.env.example
 
 # --- Private local config (your portfolio, standards, categories) ---
 config.local.yaml
@@ -27,3 +31,18 @@ project_enhancement_ideas.md
 # --- OS / editor cruft ---
 .DS_Store
 Thumbs.db
+
+# repomix packs (regenerable, large)
+.cache/
+
+# Generated indexes — derived from PRIVATE notes, therefore private themselves.
+# (They list every candidate + verdict. Regenerate with scripts/build_index.py.)
+knowledge/INDEX*.md
+
+# python
+__pycache__/
+*.pyc
+investigations/
+config.local.yaml
+
+Methodology
