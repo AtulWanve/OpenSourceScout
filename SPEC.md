@@ -1,7 +1,8 @@
 # OpenSourceScout — Design Spec (v2, planning)
 
-> Status: **plan only, nothing built yet.** Describes *what* the tool does and
-> *how the pieces fit*, so we pick a form factor before writing code.
+> Status: **partially built.** Stage 0 (COLLECT — facts, LLM-free) is live:
+> `scripts/scout.py` writes the fact corpus, `scripts/build_index.py` renders the
+> derived index. The judging layer (interpretation) is specified here and being built.
 > Rules live in [`criteria.yaml`](criteria.yaml); output shape in
 > [`knowledge/repos/_TEMPLATE.md`](knowledge/repos/_TEMPLATE.md).
 
@@ -11,14 +12,19 @@ Everything the tool records or decides is one of these. When adding a new
 criterion, ask "is it a fact, part of the worth-test, or a route?"
 
 ```
+STAGE 0 · COLLECT (facts only, LLM-free, persistent)          ← scripts/scout.py
+   repo/account → GitHub API + README → one resumable markdown note per repo = the
+   FACT CORPUS. No interpretation here, no LLM. Solves discovery: no session re-fetches
+   the same repo. Any consumer reads it — human, Obsidian, or any AI.
+                          │  facts persist; judging is a SEPARATE later pass that
+                          ▼  CONSUMES them and never edits them
 LAYER 1 · ASSESS (facts + worthiness, ONE pass; output keeps them separate)
-   facts:      category · payoff[commercial|reputation|learning|strategic] · features
-               · ai_at_build/ai_at_run (categorization only) · license · liability
+   facts:      category · features · ai_at_build/ai_at_run (categorization only) · license · liability
    worthiness: ≥1 payoff  +  passes standards  +  warrants investment  +  liability LOW
-               (judged AGAINST a disposition, not once globally)
-                          │  outcome + facts feed the route
-                          ▼
-LAYER 2 · ROUTE   independent → too_big → merge → combined → rejected
+   verdict:    payoff[commercial|reputation|learning|strategic:product|strategic:capability] (judge-assigned)
+                           │  outcome + facts feed the route
+                           ▼
+LAYER 2 · ROUTE   adopt → independent → too_big → merge → combined → rejected
                           │
                           ▼
 FINAL · CAPITAL   launch must be free (else parked_capital); scale from revenue
@@ -29,8 +35,10 @@ Key consequences:
 - **Facts + worthiness are judged in one pass**, but the output note lists facts
   separately from the verdict — features/license/category get reused later
   (parts-bin, portfolio) no matter what the verdict was.
-- **Payoff applies to EVERY disposition.** `strategic` (usefulness to an existing
-  project or a target) is the payoff a merge/combined candidate carries.
+- **Payoff applies to EVERY disposition.** Adopted product tools record `strategic:product`;
+  adopted pipeline tools record `strategic:capability`; both may apply when the tool serves
+  both roles. `strategic:product` is the payoff a merge/combined candidate carries.
+  `strategic:capability` upgrades your recurring build steps.
 - **AI-ness is categorization only** — `ai_at_build`/`ai_at_run`/`emerging_class`
   and `durability` must NOT affect worthiness or routing, so non-AI products
   compete equally and aren't buried by the AI-runtime hype.
@@ -47,8 +55,9 @@ Key consequences:
 Take a **GitHub public repo** or a **raw idea** and route it to one disposition:
 
 - **independent** — worth doing AND within one-person-plus-agentic-AI scope → build it standalone.
+- **adopt** — a complete, healthy tool you *use as-is* (don't build, don't fork, don't fold in) — in a product's workflow or your build pipeline. Ownership stays external; it remains a separate dependency with its code in its own repository, never folded into your project. Distinct from `merge` (its code folds into yours) and `independent` (it already exists).
 - **too_big** — worth doing but needs a real team → defer / partner (not a merge).
-- **merge** — folds into an existing project (one you already run): as-is, modify-fully, or harvest-parts.
+- **merge** — folds into an existing project (one you already run): modify-fully or harvest-parts.
 - **combined** — its feature(s) help cover a target when pooled with other (often rejected) single-feature repos.
 - **rejected** — none of the above, *but retained* as feature-tagged inventory for future target-assembly.
 
@@ -58,34 +67,38 @@ It's a **routing decision, not a score.** Then a `status` (`active` |
 ## 2. The funnel (the whole logic, in order)
 
 ```
-             ┌───────────────────────────────────────────────┐
- candidate → │ 1. Worth doing AND solo+AI scope?              │─ yes → INDEPENDENT
-             └───────────────────────────────────────────────┘
-                       │ no
-             ┌─────────▼─────────────────────────────────────┐
-             │ 1b. Worth doing but too big (needs a team)?    │─ yes → TOO_BIG
-             └─────────┬─────────────────────────────────────┘
-                       │ no
-             ┌─────────▼─────────────────────────────────────┐
-             │ 2. Folds into an existing project?             │─ yes → MERGE (as-is | modify-fully | harvest-parts)
-             └─────────┬─────────────────────────────────────┘
-                       │ no
-             ┌─────────▼─────────────────────────────────────┐
-             │ 3. Its features help cover a target,           │─ yes → COMBINED (build-kit toward target)
-             │    pooled with other (rejected) repos?         │
-             └─────────┬─────────────────────────────────────┘
-                       │ no
-                       ▼
-                    REJECTED  (retained as feature-tagged inventory for future targets)
+              ┌───────────────────────────────────────────────┐
+ candidate → │ 1. A complete tool you'd USE as-is?            │─ yes → ADOPT (unchanged; product or build-pipeline)
+              └───────────────────────────────────────────────┘
+                        │ no
+              ┌─────────▼─────────────────────────────────────┐
+              │ 2. Worth doing AND solo+AI scope?             │─ yes → INDEPENDENT
+              └─────────┬─────────────────────────────────────┘
+                        │ no
+              ┌─────────▼─────────────────────────────────────┐
+              │ 3. Worth doing but too big (needs a team)?    │─ yes → TOO_BIG
+              └─────────┬─────────────────────────────────────┘
+                        │ no
+               ┌─────────▼─────────────────────────────────────┐
+               │ 4. Folds into an existing project?             │─ yes → MERGE (modify-fully | harvest-parts)
+               └─────────┬─────────────────────────────────────┘
+                         │ no
+               ┌─────────▼─────────────────────────────────────┐
+               │ 5. Its features help cover a target,           │─ yes → COMBINED (build-kit toward target)
+               │    pooled with other (rejected) repos?         │
+               └─────────┬─────────────────────────────────────┘
+                        │ no
+                        ▼
+                     REJECTED  (retained as feature-tagged inventory for future targets)
 
  ─────────────────────────────────────────────────────────────────────────────
- AFTER routing, for anything you'd pursue (independent / merge / combined):
-             ┌───────────────────────────────────────────────┐
-             │ Needs capital you can't spend now?             │─ yes → status: PARKED_CAPITAL
-             └───────────────────────────────────────────────┘        (revisit when funded, OR when a
-                       │ no                                             free alt to a paid dependency is found)
-                       ▼
-                    status: ACTIVE — go build
+ AFTER routing, for anything you'd pursue (independent / adopt / merge / combined):
+              ┌───────────────────────────────────────────────┐
+              │ Needs capital you can't spend now?             │─ yes → status: PARKED_CAPITAL
+              └───────────────────────────────────────────────┘        (revisit when funded, OR when a
+                        │ no                                             free alt to a paid dependency is found)
+                        ▼
+                     status: ACTIVE — go build
 ```
 
 **"one person project" is redefined:** one person *orchestrating agentic AI*,
@@ -111,8 +124,11 @@ to fold into yet); its value is as **inventory**.
 
 Combination isn't blind pairing — it's **target-driven feature assembly:**
 
-- A **target** = a product you wish existed, usually *"an open alternative to
-  [paywalled incumbent X]"*, with a list of `needs_features`. Lives in `knowledge/targets/`.
+- A **target** is either a **product-target** — a product you wish existed, usually
+  *"an open alternative to [paywalled incumbent X]"* — OR a **build-capability
+  target**: your own build pipeline, whose `needs_features` are your recurring
+  build-step blind spots (ui-perception, schema-and-data, runtime-observability, …).
+  Both live in `knowledge/targets/` and both carry a list of `needs_features`.
 - Every candidate is tagged with `provides_features`.
 - **Assembly = feature set-cover:** match pool repos (rejects included) onto a
   target's needs. Output a **build-kit** — which repo covers which feature, the
@@ -124,8 +140,17 @@ enumerate them — you match on feature tags toward a defined target. It runs
 **when a target exists or gains a newly-covered feature**, not as a blind nightly
 sweep. This is what makes the reject pool needing to be *queryable* (§5) pay off.
 
-**Merge has three modes** (step 2), not two: `as_is`, `modify_fully` (rework the
-whole thing to fit), or `harvest_parts` (dismantle it, take only the useful
+**Re-validation — a reject is provisional.** It was judged against the portfolio,
+stacks, targets, and rules that existed *then*. The re-run scope depends on what
+changed: **rule or criteria changes** (a new criterion, a modified standard) require
+all rejects to be **re-run** (unless criteria carry version metadata that safely
+identifies only the affected subset); **targeted changes** — a new stack, project,
+target, or a dependency/health shift — re-run only the rejects tagged with the
+matching attributes. The tags on each reject make this a targeted query, not a
+blind re-sweep.
+
+**Merge has two modes**: `modify_fully` (rework the
+whole thing to fit) or `harvest_parts` (dismantle it, take only the useful
 part). `harvest_parts` and target-assembly are cousins — both are about parts
 rather than whole repos.
 
@@ -133,9 +158,15 @@ rather than whole repos.
 
 `worth_doing` carries *why bother* — and deliberately keeps some things OUT of the decision:
 
-- **Payoff** — ≥1 of `commercial | reputation | learning | strategic`. No payoff ⇒
-  not worth your time. `strategic` (usefulness to an existing project/target) is
-  the payoff a merge/combined candidate carries.
+- **Payoff** — what value came out of evaluating it; always recorded, never blank. A positive
+  answer is ≥1 of `commercial | reputation | learning | strategic:product | strategic:capability`;
+  the explicit `none` (evaluated → nothing useful) stands alone and forces `rejected`.
+  No *positive* payoff ⇒ not worth your time. **`strategic:product`** measures usefulness
+  *inside* an existing project/target — a shippable feature, the merge/combined payoff.
+  **`strategic:capability`** upgrades your *means of production* — a recurring build step
+  made faster/more accurate/less manual; it merges into your **build pipeline**, not a
+  product. Capability value counts ONLY if it upgrades a build step you genuinely
+  **repeat** — the bar that stops "it helps build something" from rescuing every reject.
 - **AI-ness is categorization, not a merit.** `ai_at_build` / `ai_at_run` /
   `emerging_class` / `durability` are recorded but **do not decide** worthiness or
   routing — so non-AI products compete equally and AI-runtime products aren't
@@ -173,17 +204,30 @@ OpenSourceScout/
 └─ project_enhancement_ideas.md    PRIVATE  orphan brainstorm — git-ignored; consider deleting
 ```
 
-Two model-level choices behind this:
+Three model-level choices behind this:
 1. **One candidate store, `disposition` in front-matter** — don't shuffle files
    between status folders; a candidate's route can change.
 2. **A generated `index/`** (JSONL) so the combination step (§4) can query
-   features without walking every note.
+   features without walking every note. Derived view — markdown notes stay the source.
+3. **Judgments are append-only history, not one overwrite.** A verdict was made against
+   the portfolio/criteria/targets that existed *then* (§4 re-validation), so re-judging
+    **keeps** the prior verdict instead of erasing it. The note body carries a dated
+    judgment log where each entry records the **outcome** of a review — what changed,
+    which assumption was corrected, the new conclusion — plus the criteria version or
+    hash and the relevant portfolio, target, dependency, health, and fact/context
+    revision identifiers — never the discussion that produced it (**knowledge, not
+    chat logs**). Re-judging fires on a context change (§4) *or* on a
+   **correction** — the prior read was simply wrong and got challenged; interpretation is
+   expected to evolve. Front-matter mirrors the *current* (latest) verdict for tooling.
+   Facts are never written by a judge — immutability is about *who writes*, not about facts
+   being frozen; Stage 0 re-fetches refresh them, and a facts-drift is itself a re-judge cause.
 
 ## 6. Decisions still open
 
-1. **GitHub access** — `gh` CLI is **not installed** here. Either install + `gh auth
-   login` (5000 req/hr, needed for volume), or the judge falls back to WebFetch of
-   the REST API (anonymous, ~60 req/hr — fine for a handful at a time).
+1. **GitHub access — RESOLVED.** `scripts/scout.py` calls the REST API directly
+   (stdlib, no `gh` CLI, no LLM). Anonymous 60/hr, or 5000/hr with `GITHUB_TOKEN`
+   (env or `.env`). The old "judge falls back to WebFetch in-session" path is gone —
+   hand-fetching was the token-burn/hallucination source Stage 0 exists to remove.
 2. **Index storage** — JSONL (simple, Git-friendly) vs. SQLite. *Lean: JSONL.*
 3. **Combination cadence** — on demand when a target exists (not a blind sweep).
 4. **LICENSE** — none yet; pick one before going public (an OSS-scout should ship OSS).
@@ -191,8 +235,12 @@ Two model-level choices behind this:
 ## 7. Build phases
 
 - **Phase 0:** framework — funnel, definitions, schema, public/private split. ✅
-- **Phase 1 (now): repo track** — [`prompts/repo-judge.md`](prompts/repo-judge.md):
-  feed a repo → gather GitHub metadata → run the funnel → write a note. ← ready to run
-- **Phase 2:** idea track — AI judges a raw idea down the same funnel.
-- **Phase 3:** the parts-bin `index/` + target assembler (step 3), on demand.
-- **Phase 4:** batch intake from GitHub search/trending; topic rollups; daily logs.
+- **Phase 1: repo track** — Stage 0 fetch (`scripts/scout.py`, LLM-free) + the note
+  schema + [`prompts/repo-judge.md`](prompts/repo-judge.md) for the judging pass. ✅
+- **Phase 3 (partial):** feature vocabulary (`capabilities.yaml`) + derived index
+  (`scripts/build_index.py`) built; the target assembler (set-cover, step 3) is next.
+- **Phase 4 (partial):** account-sweep intake + daily logs built; GitHub search/trending
+  intake and topic rollups pending.
+- **Phase 2:** idea track — a judge routes a raw idea down the same funnel. Pending.
+- **Next:** the judging layer as a separate, resumable, backend-agnostic pass with an
+  append-only judgment log (§5.3) — consuming facts, never rewriting them.
