@@ -65,12 +65,32 @@ assessment:
       automation, ai-tooling, data, content, productivity, education, creative,
       consumer, infra].
     payoff: >
-      One OR MORE of [commercial, reputation, learning, strategic]. >=1 required.
-      Applies to EVERY disposition:
+      What value CAME OUT of evaluating this repo — not why you'd pursue it. ALWAYS present,
+      never an empty list: one OR MORE of [commercial, reputation, learning, strategic], OR the
+      explicit [none]. `none` = evaluated successfully, conclusion is no practical payoff (that is
+      an ANSWER, distinct from an empty field which could mean the judge failed or forgot). `none`
+      stands alone and forces `rejected`. A POSITIVE payoff (anything but none) is what the
+      worthiness test requires to pursue a disposition. Applies to EVERY disposition:
         commercial  = money.   reputation = a name.   learning = strategic_learning.
-        strategic   = usefulness to an existing project or a target (the typical
-                      payoff for merge / combined candidates).
-    provides_features: []            # THE parts-bin key
+        strategic   = usefulness to something you ALREADY have. Two sub-kinds:
+          strategic:product     usefulness INSIDE an existing project or a target
+                                (a shippable feature) — the merge/combined payoff.
+          strategic:capability  upgrades your MEANS OF PRODUCTION — a recurring build
+                                step (UI, data layer, testing, ...) made faster / more
+                                accurate / less manual. Never ships in one product; it
+                                makes building ALL of them better.
+      BAR for strategic:capability — counts ONLY if it upgrades a build step you
+      genuinely REPEAT. This stops "it helps build something" (true of almost any
+      library) from rescuing every reject.
+    provides_features: []            # THE parts-bin key. CONTROLLED VOCABULARY — pick ONLY from
+                                     # capabilities.yaml. Matched against a target's needs_features,
+                                     # so it is worthless without a SHARED vocabulary: measured on a
+                                     # 654-candidate corpus, free-text slugs gave 1136 features, 95.6%
+                                     # singletons, and set-cover could never match anything. If no term
+                                     # fits, PROPOSE one in capabilities.yaml — never invent a one-off.
+                                     # Never use a brand name (`stagehand-sdk`): a feature is what it DOES.
+    provides_specifics: []           # free text for the nuance the coarse term loses. Unlimited, uncontrolled,
+                                     # never matched — this is where the detail goes, so nothing is lost.
     ai_at_build: none | helpful | required
     ai_at_run:   none | optional | required
     ai_note: >
@@ -83,11 +103,35 @@ assessment:
       "build-with-AI / run-AI-free". A spotlight, not a filter.
     license:
       name: ""
+      state: file | declared_only | none
+      declared_in: []                # LICENSE file | README | package metadata (pyproject/package.json)
+      state_note: >
+        declared_only = an express grant EXISTS (README and/or package metadata says "MIT") but there
+        is NO LICENSE file. This is NOT "all rights reserved" — a declaration by the copyright holder
+        IS a grant; the paperwork is just sloppy. GitHub's API reports "no license" for this case
+        because it only detects LICENSE FILES — that is a DETECTION ARTIFACT, not a legal finding.
+        ALWAYS read the README + package metadata before calling anything unlicensed. Treat
+        declared_only as low-risk usable, and ask the maintainer to add the file.
+        Only `none` (no statement anywhere) is a real blocker.
       attribution_required: null
       copyleft: null                 # must open-source your derivative → blocks a closed product
       commercial_ok: null
     capital_to_launch: zero | needs_money   # see capital_gate
     paid_dependencies: []            # each becomes a mini-target (scout a free, ACTIVE alternative)
+    install_risk: none | manual_review | agent_forbidden
+    install_note: >
+      HOW does it put someone else's code on your machine? `adopt` means RUNNING that code, so this
+      is a first-class fact — not an afterthought.
+        none            = plain package install, NO install hooks (npm pre/postinstall, arbitrary
+                          setup scripts). Installing executes nothing.
+        manual_review   = ships a setup script, or writes OUTSIDE the project (global config, shell
+                          rc, agent config dirs). Read the script first, then run it YOURSELF.
+        agent_forbidden = curl|bash, unpinned auto-run, or it downloads extra binaries / rewrites
+                          global config on ACTIVATION.
+      RULES: (1) an agent NEVER runs an installer. (2) PIN versions — never `@latest` with
+      auto-confirm. (3) check behaviour at ACTIVATION, not just install — some tools differ there.
+      (4) search "<tool> github issues security" before it touches your shell or config.
+      NOT a reject on its own — it decides HOW you adopt, not WHETHER.
 
   # ---- WORTHINESS (the test; judged against the disposition in question) ----
   worthiness:
@@ -112,10 +156,25 @@ funnel:
   - step: "1b"
     disposition: too_big
     ask: "Worthy but out of scope (needs a team)?  → defer / partner, don't force a merge."
+  - step: "1c"
+    disposition: adopt
+    only_if_prior_no: true
+    ask: "A complete, HEALTHY existing tool you'd USE as-is — not build, not fork, not fold in?"
+    means: >
+      Depend on / run it UNCHANGED as an external tool — in a product's workflow OR
+      your build pipeline. Distinct from `independent` (it already exists; you don't
+      build it) and from `merge` (its CODE stays separate; you don't take it into yours).
+    serves: "product_workflow | build_pipeline (a strategic:capability adoption)"
+    still_capital_gated: "adopting paid deps you can't cover → status parked_capital"
+    install_gate: >
+      Adopting = running their code on your machine, so record `install_risk` and obey its RULES
+      (pin the version; a human runs the installer, never an agent; audit ACTIVATION behaviour).
+      Prefer reading the source (clone is safe — it executes nothing) over trusting the README.
   - step: 2
     disposition: merge
     only_if_prior_no: true
-    ask: "Can it fold into an existing_project?"
+    ask: "Can it fold into an existing_project — OR into your build pipeline/toolchain as a capability?"
+    merge_home: "product (an existing_project) | build_pipeline (a strategic:capability upgrade to HOW you build)"
     modes: { as_is: "whole, unchanged", modify_fully: "rework to fit", harvest_parts: "take only the useful part(s)" }
     harvest_type: >
       code = lift the code (same language) · blueprint = reimplement the approach
@@ -127,6 +186,7 @@ funnel:
     only_if_prior_no: true
     ask: "Do its features help cover a TARGET when pooled with other (often rejected) repos?"
     method: "Target-driven feature set-cover (match provides_features → needs_features). Output a build-kit."
+    target_kinds: "a product-target (open alt to a paywalled incumbent) OR a build-capability target (your build pipeline; needs_features = your recurring build-step blind spots)."
   - step: 4
     disposition: rejected
     only_if_prior_no: true
@@ -134,6 +194,35 @@ funnel:
       NOT a graveyard — retained as feature-tagged INVENTORY, which is both SUPPLY
       (fills a target's gaps) and INSPIRATION (a compelling part can SEED a new
       target — propose one, don't wait for it to be written).
+
+# ---------------------------------------------------------------------------
+# 4b. RE-VALIDATION — a reject is PROVISIONAL; re-scan inventory on context change
+# ---------------------------------------------------------------------------
+revalidation:
+  principle: >
+    A reject was judged against the portfolio, stacks, targets, and RULES that
+    existed THEN. Change any of those and the matching inventory must be re-run —
+    a 'no' can become merge / combined / adopt.
+  triggers:                       # CONTEXT changed — the world the verdict assumed is different now
+    - new_or_changed_rule        # e.g. adding strategic:capability re-surfaced build-tooling rejects
+    - new_project_or_stack       # start an RN project → re-run every reject tagged that stack/domain
+    - new_target                 # a target's needs_features → re-run inventory for set-cover
+    - dependency_or_health_shift # a free alt appears, or an incumbent gets abandoned
+  also_re_judge_on:               # the verdict itself was off — not a context change
+    - facts_drift                # Stage 0 re-fetched and the FACTS changed (repo moved on)
+    - correction                 # the prior interpretation was simply WRONG and got challenged.
+                                 # EXPECTED, not exceptional: an AI judge misreads, discussion fixes it.
+  how: >
+    Inventory is retained TAGGED (tags + provides_features) so it's QUERYABLE: match
+    the trigger (stack / feature / domain) → pull just those rejects → re-run the
+    funnel on them. Never a blind re-sweep of everything.
+  history: >
+    Re-judging APPENDS an evaluation entry; it never overwrites the last. Each entry
+    records the OUTCOME of the review — what changed, which assumption was corrected,
+    the new conclusion — NOT the discussion that produced it. The note accumulates
+    KNOWLEDGE, not chat logs. Latest entry = the active verdict; the trail below is how
+    the interpretation evolved. A judgment never touches facts (see assessment: output
+    keeps facts and verdict separate).
 
 # ---------------------------------------------------------------------------
 # 5. CAPITAL GATE — the LAST check. Money is never the first filter.
@@ -169,9 +258,13 @@ judging:
 # ---------------------------------------------------------------------------
 never_reject_on:
   - spoken_language
-  - programming_language
+  - programming_language   # STACK is judged stack-BLIND — never a gate. It surfaces only LATE as a
+                           # "how to execute" modifier: it picks merge harvest_type (code vs blueprint),
+                           # affects adopt integration-fit, and feeds integration_effort. A great idea in a
+                           # foreign stack → independent (build in YOUR stack) or blueprint-merge, never rejected.
   - capital                # last check, never first (see capital_gate)
   - ai_at_run              # AI-ness is categorization, not a merit or demerit
+  - install_risk           # determines adoption procedure (how you adopt), not rejection eligibility (whether)
 
 # ---------------------------------------------------------------------------
 # Extra evidence the judge weighs (NOT gates)
