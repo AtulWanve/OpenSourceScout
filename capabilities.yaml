@@ -1,0 +1,95 @@
+# OpenSourceScout — CONTROLLED VOCABULARY for `provides_features`.
+# ============================================================================
+# WHY THIS EXISTS
+# provides_features is the parts-bin key: the combination step (criteria.yaml
+# funnel step 4) works by matching a candidate's provides_features against a
+# target's needs_features. That REQUIRES a shared vocabulary.
+#
+# Without one, it doesn't work at all. Measured on a real 654-candidate corpus:
+# 1136 distinct feature slugs, 95.6% of them used by exactly ONE candidate. Set-cover
+# could never match anything, and the "top" slugs were brand names (`browserbase-api-
+# wrapper`, `stagehand-sdk`) — describing what a repo is CALLED, not what it DOES.
+# That violates the framework's own rule: a feature is what it DOES.
+#
+# HOW TO USE
+#   provides_features:  pick from THIS list only. Coarse on purpose — overlap is the
+#                       whole point. If nothing fits, propose a new term here (a PR to
+#                       the vocabulary), don't invent a one-off slug in a note.
+#   provides_specifics: free text for the nuance the coarse term loses
+#                       (e.g. "OpenAPI + GraphQL, property-based").
+#
+# Format:  term: [alias, alias, ...]   — aliases drive scripts/normalize_features.py
+# ============================================================================
+
+capabilities:
+
+  # ---- agents / orchestration -------------------------------------------
+  agent-orchestration: [swarm, multi-agent, coordinator, orchestration, consensus, delegation, subagent]
+  agent-harness: [harness, control-layer, agent-runtime, agent-platform, meta-harness]
+  workflow-engine: [workflow, dag, state-machine, process-automation]   # NB: "pipeline" is too generic — it stole rag-pipeline
+  task-queue: [queue, async-task, job-runner, task-center, scheduler-queue]
+  prompt-management: [prompt, prompt-template, prompt-hardening, system-prompt, instruction]
+  skill-packaging: [skill, skills, plugin, extension, marketplace, rules-file]
+  mcp-server: [mcp, model-context-protocol]
+  model-routing: [multi-provider, model-management, llm-gateway, provider-fallback, model-selection]
+  context-management: [context, compaction, context-window, token-budget, summarisation]
+  memory-persistence: [memory, persistence, session-memory, recall, learning-loop, self-learning]
+  knowledge-graph: [graph, knowledge-base, entity-graph, semantic-graph]
+  guardrails: [guardrail, safety-check, policy-enforcement, loop-detection, sandbox-policy]
+
+  # ---- browser / UI ------------------------------------------------------
+  browser-automation: [browser, cdp, headless, playwright, puppeteer, stagehand, browserbase, web-driver]
+  ui-perception: [visual-grounding, screenshot, see-ui, accessibility-tree, dom-snapshot]
+  ux-flow-validation: [e2e, user-flow, interaction-test, journey, click-through]
+  computer-use: [gui-agent, os-control, desktop-automation, device-automation]
+  ui-component-library: [component, widget, ui-kit, design-tokens, theming]
+  design-to-code: [mockup-to-code, design-html, figma-to-code, prototype-generation]
+  asset-generation: [icon, image-asset, brand, logo, diagram, illustration]
+
+  # ---- code / build ------------------------------------------------------
+  code-review: [review, pr-review, critique, adversarial-review]
+  code-generation: [codegen, scaffold, boilerplate, template-generation]
+  static-analysis: [lint, linter, taint, sast, ast, type-check]
+  security-audit: [security, vulnerability, owasp, secret-scan, threat-model, dependency-audit]
+  test-generation: [test-gen, property-based, fuzzing, mutation-testing]
+  test-runner: [testing, test-framework, assertion, snapshot-test, qa, quality-assurance]
+  benchmarking: [benchmark, performance, profiling, regression-detection, load-test]
+  runtime-observability: [observability, telemetry, tracing, logging, monitoring, debugging]
+  refactoring: [refactor, codemod, migration-tool, transform]
+  codebase-search: [semantic-search, code-search, grep, indexing]   # NB: bare "search"/"retrieval" are too generic
+  codebase-memory: [architectural-memory, repo-context, project-brain, code-graph]
+  documentation-generation: [docs, docgen, readme-generation, api-docs]
+  release-automation: [release, versioning, changelog, publish, deploy-pipeline]
+  ci-integration: [ci, github-actions, pre-commit, hooks, gate]
+  sandbox-isolation: [sandbox, container-isolation, vm, worktree, isolation]
+
+  # ---- data / API --------------------------------------------------------
+  api-client: [sdk, wrapper, client-library, binding]
+  api-contract: [openapi, graphql, contract-testing, schema-validation, drift-detection]
+  data-generation: [synthetic-data, seed-data, fixtures, mock-data, faker]
+  data-extraction: [scraping, crawler, parser, ocr, document-parsing, extraction]
+  schema-management: [schema, migration, orm, database-schema]
+  vector-search: [embedding, vector-db, similarity, hnsw, rerank]
+  rag-pipeline: [rag, retrieval-augmented, chunking]   # NB: "ingestion" is too generic — it stole github-api-ingestion
+  database-adapter: [database, storage-engine, kv-store, sql, nosql]
+
+  # ---- content / media ---------------------------------------------------
+  content-generation: [content, writing, copy, text-generation]
+  speech-processing: [transcription, tts, speech, voice, audio]
+  image-generation: [image-gen, diffusion, text-to-image]
+  video-generation: [video, animation, lip-sync, video-gen]
+
+  # ---- infra / integration ----------------------------------------------
+  deployment-automation: [deploy, provisioning, infra-as-code, hosting]
+  container-orchestration: [kubernetes, docker, container]   # NB: "cluster" is too generic — it stole cluster-effects
+  tunnel-proxy: [tunnel, proxy, gateway, reverse-proxy, ngrok]
+  auth-integration: [auth, oauth, sso, identity, credentials]
+  notification-integration: [notification, webhook, slack, alerting, chat-integration]
+  scheduling: [cron, schedule, timer, recurring]
+  file-sync: [sync, mirroring, backup, replication]
+
+  # ---- discovery / research ---------------------------------------------
+  repo-discovery: [trending, repo-search, github-discovery, awesome-list]
+  deep-research: [research, investigation, report-generation, prior-art]
+  web-search: [search-api, serp, search-provider]
+  curated-reference: [curated-list, catalogue, directory, awesome, reference-collection]
