@@ -1,0 +1,45 @@
+# OpenSourceScout — EXAMPLE config.  Copy to `config.local.yaml` and edit.
+# ---------------------------------------------------------------------------
+# criteria.yaml (public) holds the RULES.  This file holds the DATA those rules
+# judge against: your portfolio, your quality bar, your category vocabulary.
+# `config.local.yaml` is git-ignored — it never leaves your machine.
+# ---------------------------------------------------------------------------
+
+# Where the project list comes from — ONE store, possibly two readers.
+#   local     -> use existing_projects below (standalone; the default)
+#   <path>    -> read an external registry instead, e.g. ../my-other-project/projects/
+# Whichever you pick is the single source of truth, so the two can never drift.
+# Auto-detection is deliberately NOT the default: a tool silently judging against
+# a portfolio you didn't know it picked up is how surprises happen.
+portfolio_source: local
+
+existing_projects:              # for the MERGE question + the `strategic` payoff
+  - name: example-app
+    what: "One sentence: what it does, and for whom."
+    stack: [python, fastapi, postgres]
+    category: devtools
+    status: "active build"
+
+  - name: example-site
+    what: "A second project, so `merge` has somewhere to land."
+    stack: [typescript, nextjs]
+    category: content
+    status: "live"
+
+standards: >
+  Your quality bar in one sentence — what makes something pass for YOU.
+  e.g. "solves a real recurring annoyance, and is shippable free in under two weeks".
+
+# Controlled category vocabulary — pick exactly ONE per candidate.
+# Deliberately not developer-only: surface non-dev products too.
+categories:
+  - devtools
+  - automation
+  - ai-tooling
+  - data
+  - content
+  - productivity
+  - education
+  - creative
+  - consumer
+  - infra
