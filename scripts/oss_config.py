@@ -17,6 +17,8 @@ ROOT = Path(__file__).resolve().parents[1]
 CONFIG = ROOT / "config.local.yaml"
 EXAMPLE = ROOT / "config.example.yaml"
 CAPABILITIES = ROOT / "capabilities.yaml"
+CRITERIA = ROOT / "criteria.yaml"
+CRITERIA_LOCAL = ROOT / "criteria.local.yaml"
 
 
 # ---------------------------------------------------------------- minimal yaml
@@ -139,6 +141,141 @@ def load_config() -> dict:
         )
     return load_file(CONFIG)
 
+def _merge_dicts(base: dict, override: dict) -> dict:
+    """Recursively merge override dict into base dict."""
+    out = dict(base)
+    for k, v in override.items():
+        if isinstance(v, dict) and k in out and isinstance(out[k], dict):
+            out[k] = _merge_dicts(out[k], v)
+        else:
+            out[k] = v
+    return out
+
+def get_criteria_text() -> str:
+    """Load criteria.yaml, apply criteria.local.yaml if present, and return as YAML string.
+
+    If no local overrides exist, returns the raw text of criteria.yaml directly
+    to preserve exact formatting and comments. Otherwise merges the dicts and
+    formats a basic YAML string.
+    """
+    if not CRITERIA_LOCAL.exists():
+        return CRITERIA.read_text(encoding="utf-8")
+
+    base = load_file(CRITERIA)
+
+    raw = CRITERIA_LOCAL.read_text(encoding="utf-8")
+    rows = _rows(raw)
+    if rows and (
+        rows[0][1].startswith("- ")
+        or any(indent == rows[0][0] and ":" not in line for indent, line in rows)
+    ):
+        raise SystemExit("! criteria.local.yaml must be a top-level mapping, not a list or a scalar")
+
+    override = loads(raw)
+    merged = _merge_dicts(base, override)
+
+    def _needs_quote(v: str) -> bool:
+        if v in ("", "null", "~", "true", "false", "yes", "no", "on", "off"):
+            return True
+        if (v.startswith("[") and v.endswith("]")) or (v.startswith("{") and v.endswith("}")):
+            return True
+        if ":" in v or "#" in v or v.strip() != v:
+            return True
+        if v and (v[0].isdigit() or (v[0] in "+-" and len(v) > 1 and v[1].isdigit())):
+            return True
+        if v.startswith(("- ", "?", "!", "&", "@")):
+            return True
+        return False
+
+    def _needs_literal(v: str) -> bool:
+        return "\n" in v or (_needs_quote(v) and ("'" in v or '"' in v))
+
+    def _scalar_str(v: str) -> str:
+        return f"'{v}'" if _needs_quote(v) else v
+
+    def _plain(v) -> str:
+        if v is None:
+            return "null"
+        if isinstance(v, bool):
+            return "true" if v else "false"
+        if isinstance(v, str):
+            return _scalar_str(v)
+        return str(v)
+
+    def _literal(lines: list[str], pad: str, key: str | None, v: str) -> None:
+        if key is None:
+            lines.append(f"{pad}- |")
+        else:
+            lines.append(f"{pad}{key}: |")
+        for ln in v.split("\n"):
+            lines.append(f"{pad}  {ln}")
+
+    def _kv(lines: list[str], pad: str, k, v) -> None:
+        if isinstance(v, dict):
+            if v:
+                lines.append(f"{pad}{k}:")
+                _map(lines, pad + "  ", v)
+            else:
+                lines.append(f"{pad}{k}: {{}}")
+        elif isinstance(v, list):
+            if v:
+                lines.append(f"{pad}{k}:")
+                _list(lines, pad + "  ", v)
+            else:
+                lines.append(f"{pad}{k}: []")
+        elif isinstance(v, str) and ("\n" in v or ('"' in v and "'" in v)):
+            _literal(lines, pad, k, v)
+        else:
+            lines.append(f"{pad}{k}: {_plain(v)}")
+
+    def _map(lines: list[str], pad: str, d: dict) -> None:
+        for k, v in d.items():
+            _kv(lines, pad, k, v)
+
+    def _list(lines: list[str], pad: str, items: list) -> None:
+        for item in items:
+            _item(lines, pad, item)
+
+    def _item(lines: list[str], pad: str, item) -> None:
+        if isinstance(item, dict):
+            if not item:
+                lines.append(f"{pad}- {{}}")
+                return
+            items = list(item.items())
+            k0, v0 = items[0]
+            if isinstance(v0, dict):
+                if v0:
+                    lines.append(f"{pad}- {k0}:")
+                    _map(lines, pad + "  ", v0)
+                else:
+                    lines.append(f"{pad}- {k0}: {{}}")
+            elif isinstance(v0, list):
+                if v0:
+                    lines.append(f"{pad}- {k0}:")
+                    _list(lines, pad + "  ", v0)
+                else:
+                    lines.append(f"{pad}- {k0}: []")
+            elif isinstance(v0, str) and ("\n" in v0 or ('"' in v0 and "'" in v0)):
+                _literal(lines, pad, k0, v0, dash="- ")
+            else:
+                lines.append(f"{pad}- {k0}: {_plain(v0)}")
+            for k, v in items[1:]:
+                _kv(lines, pad + "  ", k, v)
+        elif isinstance(item, list):
+            if not item:
+                lines.append(f"{pad}- []")
+            else:
+                for sub in item:
+                    _item(lines, pad + "  ", sub)
+        else:
+            lines.append(f"{pad}- {_plain(item)}")
+
+    def _to_yaml(d: dict, indent=0) -> str:
+        lines: list[str] = []
+        _map(lines, " " * indent, d)
+        return "\n".join(lines)
+
+    return _to_yaml(merged)
 
 def get_portfolio() -> tuple[list[dict], str]:
     """-> (projects, source_description)
