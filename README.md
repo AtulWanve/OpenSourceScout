@@ -34,7 +34,7 @@ first. Full rules in [`criteria.yaml`](criteria.yaml); design in [`SPEC.md`](SPE
 
 You feed it a repo; it gathers GitHub metadata, runs the funnel, and writes a
 verdict note. The instructions the judge follows are in
-[`prompts/repo-judge.md`](prompts/repo-judge.md).
+[`prompts/judge_worker.md`](prompts/judge_worker.md).
 
 Drop repos to evaluate (one `owner/name` or URL per line) into `inbox/`, or pass
 them directly to the judge.
@@ -44,7 +44,7 @@ them directly to the judge.
 ```
 criteria.yaml            the shareable rules (public framework)
 SPEC.md                  design + rationale
-prompts/repo-judge.md    how the repo track evaluates a candidate
+prompts/judge_worker.md  how the repo track evaluates a candidate
 knowledge/repos/         verdict notes  (PRIVATE — git-ignored; _TEMPLATE.md is tracked)
 knowledge/targets/       wish-list products to assemble toward (PRIVATE)
 knowledge/{topics,daily} rollups + run logs (PRIVATE)
