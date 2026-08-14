@@ -24,7 +24,7 @@ LAYER 1 · ASSESS (facts + worthiness, ONE pass; output keeps them separate)
    verdict:    payoff[commercial|reputation|learning|strategic:product|strategic:capability] (judge-assigned)
                            │  outcome + facts feed the route
                            ▼
-LAYER 2 · ROUTE   adopt → independent → too_big → merge → combined → rejected
+LAYER 2 · ROUTE   independent → too_big → adopt → merge → upstream_pr/simplify_fork → combined → rejected
                           │
                           ▼
 FINAL · CAPITAL   launch must be free (else parked_capital); scale from revenue
@@ -58,6 +58,8 @@ Take a **GitHub public repo** or a **raw idea** and route it to one disposition:
 - **adopt** — a complete, healthy tool you *use as-is* (don't build, don't fork, don't fold in) — in a product's workflow or your build pipeline. Ownership stays external; it remains a separate dependency with its code in its own repository, never folded into your project. Distinct from `merge` (its code folds into yours) and `independent` (it already exists).
 - **too_big** — worth doing but needs a real team → defer / partner (not a merge).
 - **merge** — folds into an existing project (one you already run): modify-fully or harvest-parts.
+- **upstream_pr** — great core tech, terrible UX/complexity, but the codebase is manageable enough to contribute a fix directly.
+- **simplify_fork** — great core tech, terrible UX, but their project is too rigid for a PR (requires license check to wrap or fork).
 - **combined** — its feature(s) help cover a target when pooled with other (often rejected) single-feature repos.
 - **rejected** — none of the above, *but retained* as feature-tagged inventory for future target-assembly.
 
@@ -68,23 +70,33 @@ It's a **routing decision, not a score.** Then a `status` (`active` |
 
 ```
               ┌───────────────────────────────────────────────┐
- candidate → │ 1. A complete tool you'd USE as-is?            │─ yes → ADOPT (unchanged; product or build-pipeline)
+ candidate → │ 1. Worth doing AND solo+AI scope?              │─ yes → INDEPENDENT
               └───────────────────────────────────────────────┘
                         │ no
               ┌─────────▼─────────────────────────────────────┐
-              │ 2. Worth doing AND solo+AI scope?             │─ yes → INDEPENDENT
+              │ 1b. Worth doing but too big (needs a team)?   │─ yes → TOO_BIG
               └─────────┬─────────────────────────────────────┘
                         │ no
               ┌─────────▼─────────────────────────────────────┐
-              │ 3. Worth doing but too big (needs a team)?    │─ yes → TOO_BIG
+              │ 1c. A complete tool you'd USE as-is?          │─ yes → ADOPT (unchanged; product or build-pipeline)
               └─────────┬─────────────────────────────────────┘
                         │ no
                ┌─────────▼─────────────────────────────────────┐
-               │ 4. Folds into an existing project?             │─ yes → MERGE (modify-fully | harvest-parts)
+               │ 2. Folds into an existing project?             │─ yes → MERGE (modify-fully | harvest-parts)
                └─────────┬─────────────────────────────────────┘
                          │ no
                ┌─────────▼─────────────────────────────────────┐
-               │ 5. Its features help cover a target,           │─ yes → COMBINED (build-kit toward target)
+               │ 3. Valuable core, terrible UX, but codebase   │─ yes → UPSTREAM_PR (fix it directly)
+               │    is manageable enough to fix via PR?        │
+               └─────────┬─────────────────────────────────────┘
+                         │ no
+               ┌─────────▼─────────────────────────────────────┐
+               │ 3b. Valuable core, terrible UX, but a PR      │─ yes → SIMPLIFY_FORK (wrap/fork, license permitting)
+               │     isn't viable — wrap or fork it?           │
+               └─────────┬─────────────────────────────────────┘
+                         │ no
+               ┌─────────▼─────────────────────────────────────┐
+               │ 4. Its features help cover a target,           │─ yes → COMBINED (build-kit toward target)
                │    pooled with other (rejected) repos?         │
                └─────────┬─────────────────────────────────────┘
                         │ no
@@ -116,7 +128,7 @@ is never a gate; capital is the *last* gate, never the first.
 | Flow | LLM reads the idea + prior-art search → funnel | Pull GitHub metadata → run funnel on hard facts → escalate borderline/after a constraint to an agentic coding agent for a second opinion |
 | Why | You can't score a raw idea in code without over-building | Metrics filter volume cheaply; AI adjudicates the calls that matter |
 
-## 4. Targets, the parts bin, and the combination step (step 3)
+## 4. Targets, the parts bin, and the combination step (step 4)
 
 The reject pool is **not a graveyard — it's a feature-tagged parts bin.** A simple
 single-feature repo *should* fail `independent` (too small) and `merge` (nothing
@@ -189,26 +201,30 @@ with `.gitignore` — no file-shuffling:
 ```
 OpenSourceScout/
 ├─ README.md                       PUBLIC   what it is + how to run the repo track
-├─ criteria.yaml                   PUBLIC   the rules (no private project names)
 ├─ SPEC.md                         PUBLIC   design + rationale
-├─ prompts/repo-judge.md           PUBLIC   the repo track
+├─ criteria.yaml                   PUBLIC   the rules (no private project names)
+├─ capabilities.yaml               PUBLIC   controlled feature vocabulary
+├─ config.example.yaml             PUBLIC   config template (copy to config.local.yaml)
+├─ .env.example                    PUBLIC   env template (GITHUB_TOKEN)
+├─ prompts/judge_worker.md         PUBLIC   the judge prompt used by judge_loop.py
 ├─ knowledge/repos/_TEMPLATE.md    PUBLIC   the note schema (real notes below are ignored)
 ├─ knowledge/targets/_TEMPLATE.md  PUBLIC
+├─ scripts/                        PUBLIC   pipeline scripts (scout.py, judge_loop.py, build_index.py, etc.)
 ├─ .gitignore
 │
 ├─ config.local.yaml               PRIVATE  your portfolio, standards, categories
 ├─ knowledge/repos/*               PRIVATE  verdict notes
-├─ knowledge/{targets,topics,daily,combinations}/*   PRIVATE
+├─ knowledge/{targets,topics,daily}/*  PRIVATE
+├─ knowledge/INDEX*.md             PRIVATE  generated indexes (features → candidates)
 ├─ inbox/*                         PRIVATE  repos queued to evaluate
-├─ index/                          PRIVATE  generated parts-bin index (features → candidates)
-└─ project_enhancement_ideas.md    PRIVATE  orphan brainstorm — git-ignored; consider deleting
+└─ project_enhancement_ideas.md    PRIVATE  orphan brainstorm — git-ignored
 ```
 
 Three model-level choices behind this:
 1. **One candidate store, `disposition` in front-matter** — don't shuffle files
    between status folders; a candidate's route can change.
-2. **A generated `index/`** (JSONL) so the combination step (§4) can query
-   features without walking every note. Derived view — markdown notes stay the source.
+2. **A generated Markdown index** (`knowledge/INDEX*.md`) so the combination step (§4)
+   can query features without walking every note. Derived view — markdown notes stay the source.
 3. **Judgments are append-only history, not one overwrite.** A verdict was made against
    the portfolio/criteria/targets that existed *then* (§4 re-validation), so re-judging
     **keeps** the prior verdict instead of erasing it. The note body carries a dated
@@ -228,7 +244,7 @@ Three model-level choices behind this:
    (stdlib, no `gh` CLI, no LLM). Anonymous 60/hr, or 5000/hr with `GITHUB_TOKEN`
    (env or `.env`). The old "judge falls back to WebFetch in-session" path is gone —
    hand-fetching was the token-burn/hallucination source Stage 0 exists to remove.
-2. **Index storage** — JSONL (simple, Git-friendly) vs. SQLite. *Lean: JSONL.*
+2. **Index storage — RESOLVED.** Implemented as generated Markdown files (`knowledge/INDEX*.md`), regenerated by `scripts/build_index.py`.
 3. **Combination cadence** — on demand when a target exists (not a blind sweep).
 4. **LICENSE** — none yet; pick one before going public (an OSS-scout should ship OSS).
 
@@ -236,11 +252,12 @@ Three model-level choices behind this:
 
 - **Phase 0:** framework — funnel, definitions, schema, public/private split. ✅
 - **Phase 1: repo track** — Stage 0 fetch (`scripts/scout.py`, LLM-free) + the note
-  schema + [`prompts/repo-judge.md`](prompts/repo-judge.md) for the judging pass. ✅
-- **Phase 3 (partial):** feature vocabulary (`capabilities.yaml`) + derived index
-  (`scripts/build_index.py`) built; the target assembler (set-cover, step 3) is next.
+  schema + [`prompts/judge_worker.md`](prompts/judge_worker.md) for the judging pass. ✅
+- **Phase 2 (partial):** judging layer — `judge_loop.py` + `judge_worker.md` built;
+  append-only log working. Prompt alignment with `_TEMPLATE.md` fields in progress.
+- **Phase 3 (partial):** feature vocabulary (`capabilities.yaml`) + `normalize_features.py`
+  + derived indexes (`scripts/build_index.py`) built; the target assembler (set-cover,
+  step 4 combined) is next.
 - **Phase 4 (partial):** account-sweep intake + daily logs built; GitHub search/trending
   intake and topic rollups pending.
-- **Phase 2:** idea track — a judge routes a raw idea down the same funnel. Pending.
-- **Next:** the judging layer as a separate, resumable, backend-agnostic pass with an
-  append-only judgment log (§5.3) — consuming facts, never rewriting them.
+- **Pending:** idea track — a judge routes a raw idea down the same funnel.
