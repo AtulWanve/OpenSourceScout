@@ -15,8 +15,9 @@
 meta:
   purpose: >
     For each candidate (a GitHub repo OR an idea): assess it (facts + whether
-    it's worth your time, in one pass), route it (independent / too_big / merge /
-    combined / rejected), then check capital last. Money is never the first filter.
+    it's worth your time, in one pass), route it (independent / too_big / adopt / merge /
+    upstream_pr / simplify_fork / combined / rejected), then check capital last. Money is
+    never the first filter.
     Scope is NOT developer-tools-only — surface non-dev products too.
   # Your private portfolio lives in config.local.yaml (git-ignored) — NOT here.
   # criteria.yaml is the shareable framework; config.local.yaml is what only you see.
@@ -132,6 +133,11 @@ assessment:
       auto-confirm. (3) check behaviour at ACTIVATION, not just install — some tools differ there.
       (4) search "<tool> github issues security" before it touches your shell or config.
       NOT a reject on its own — it decides HOW you adopt, not WHETHER.
+    liability_risk: >
+      low | high. HIGH = a wrong output causes legal, financial, or physical harm,
+      OR needs a license / regulatory compliance from day one. Safe, non-advisory
+      tools in the same broad area are LOW. HIGH → not worth_doing.
+    tags: []                         # themes → feed knowledge/topics/ rollups. Discovery tags, not category.
 
   # ---- WORTHINESS (the test; judged against the disposition in question) ----
   worthiness:
@@ -182,12 +188,35 @@ funnel:
       also sidesteps copyleft: ideas/algorithms aren't copyrightable, only code is.
       (Verify per case — not legal advice.)
   - step: 3
+    disposition: upstream_pr
+    only_if_prior_no: true
+    ask: "Valuable core but suffers from terrible UX/complexity (e.g., installation friction, configuration bloat, target audience mismatch, confusing navigation, lack of automation), AND the codebase is manageable enough to fix via PR?"
+    means: "Contribute a UX/complexity fix directly to their project instead of building your own."
+    license_gate: >
+      Record the project's contribution terms BEFORE selecting this route — is there a
+      LICENSE file, and what do CONTRIBUTING / CLA / DCO require of a patch? Confirm you
+      hold the authority to license the patch (employer/consultant IP agreements). It is
+      NOT automatically safe: you can only contribute what you are entitled to grant.
+  - step: "3b"
+    disposition: simplify_fork
+    only_if_prior_no: true
+    ask: "Valuable core but suffers from terrible UX/complexity (e.g., installation friction, configuration bloat, target audience mismatch), and a PR isn't viable (unmanageable codebase, monolithic/rigid design, or needs a structural wrapper), AND license permits?"
+    means: "Create a better UX or wrapper over their complex core (e.g., simplifying the API, building a better dashboard, automating manual workflows). Must respect the original license."
+    license_gate: >
+      CRITICAL: analyze the integration BEFORE selecting this route — is the wrapper a
+      separate program (own process, clean interface) or a combined work (linked, bundled,
+      derived) of their core? Then check the distribution model and the obligations it
+      actually triggers (do you distribute, and to whom?). Copyleft is not automatically
+      decisive — a separate program or private/unreleased distribution can avoid the
+      share-alike trigger — and a permissive wrapper of a combined work is not automatically
+      safe. Record the analysis with the disposition.
+  - step: 4
     disposition: combined
     only_if_prior_no: true
     ask: "Do its features help cover a TARGET when pooled with other (often rejected) repos?"
     method: "Target-driven feature set-cover (match provides_features → needs_features). Output a build-kit."
     target_kinds: "a product-target (open alt to a paywalled incumbent) OR a build-capability target (your build pipeline; needs_features = your recurring build-step blind spots)."
-  - step: 4
+  - step: 5
     disposition: rejected
     only_if_prior_no: true
     note: >
