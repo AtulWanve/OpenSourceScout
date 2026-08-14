@@ -16,6 +16,8 @@ When the user gives you a task, you MUST first determine which "Room" (folder) i
 - `/investigations` — The Analyst Room. Route here when the user asks questions like "Find an alternative to X" or "Do we have a repo that does Y?".
 - `/.claude` — The Tooling Room. Route here to manage Claude Code specific settings, hooks, skills, or permission allowlists.
 - `/Methodology` — The Library. Reference material on the ICM architecture.
+- `config.local.yaml` (Root) — Private user data. Holds your private portfolio (`existing_projects`), personal standards, and categories. The judge engine reads this alongside the public rules. (Git-ignored)
+- `criteria.local.yaml` (Root) — Private rule overrides. Overrides public definitions in `criteria.yaml` without checking them into git. (Git-ignored)
 
 ## Rules
 - Read this file first on every new task.
