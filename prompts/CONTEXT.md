@@ -13,4 +13,3 @@ You are designing the "Smart Mad Libs" templates (the Layer 3 AI tools).
 
 ## Outputs
 - `judge_worker.md` -> (Backend JSON contract)
-- `repo-judge.md` -> (Human-readable Markdown note contract)
