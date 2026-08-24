@@ -11,7 +11,7 @@ intake: targeted           # targeted = deliberately scouted | bulk = account sw
                            # Both mean "facts, no verdict" until `disposition` is set — but bulk also means
                            # NOBODY HAS LOOKED. Never read a bulk note's silence as a judgement.
 
-disposition: null          # independent | too_big | adopt | merge | combined | rejected  ← MIRRORS the top log entry
+disposition: null          # independent | too_big | adopt | merge | upstream_pr | simplify_fork | combined | rejected  ← MIRRORS the top log entry
 status: active             # active | parked_capital   (capital is the LAST check)
 judgments: none              # none | "<N> entries, last <date>" — mirrors the log below, so tooling sees the
                            # CURRENT verdict AND whether the interpretation has evolved, without parsing the body
@@ -50,12 +50,22 @@ install_note: null         # how it installs; pin versions; a human runs install
 step1_independent:
   worth_doing: null        # true | false  (reason in prose below)
   solo_ai_scope: null      # true | false
+step1b_too_big:
+  worth_doing: null        # true (always true for too_big — it's worthy but out of scope)
+  why_too_big: null        # what specifically needs a team (e.g. "ongoing moderation", "multi-platform ops")
 merge:
   target: null             # existing project name, or "build-pipeline" (a strategic:capability merge), or null
   mode: null               # as_is | modify_fully | harvest_parts
   harvest_type: null       # code | blueprint  (blueprint = reimplement; also sidesteps copyleft)
 adopt:
   serves: null             # product_workflow | build_pipeline   (for disposition: adopt — use as-is, unchanged)
+upstream_pr:
+  ux_issue: null           # what specific UX/complexity needs fixing
+  pr_scope: null           # rough estimate of what the PR would touch
+simplify_fork:
+  ux_issue: null           # what specific UX/complexity needs fixing
+  wrapper_type: null       # new-ui | simplified-api | config-generator
+  license_check: null      # pass | fail (must be checked for commercial use)
 combination:
   covers_target: null      # target slug this contributes to, or null
   members: []              # other candidate slugs in the same build-kit
