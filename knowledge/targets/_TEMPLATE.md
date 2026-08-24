@@ -1,6 +1,8 @@
 ---
-# A TARGET = a product you wish existed. The combination step assembles pool
-# repos (rejects included) to cover its needs_features. Copy per target.
+# A TARGET is either a PRODUCT-target (a product you wish existed, e.g. an open
+# alt to a paywalled tool) OR a BUILD-CAPABILITY target (your build pipeline;
+# needs_features = recurring build-step blind spots). The combination step
+# assembles pool repos (rejects included) to cover its needs_features. Copy per target.
 target: "open-alt-to-<paywalled-product>"
 inspired_by: "<the paywalled/proprietary incumbent, if any>"
 created: 2026-07-11
@@ -12,7 +14,7 @@ needs_features:
   - feature-b
   - feature-c
 
-# Filled by the assembler (step 3): which candidate covers which feature.
+# Filled by the assembler (step 4): which candidate covers which feature.
 build_kit:
   # feature-a: owner/repo-1
   # feature-b: idea-slug-2
