@@ -239,18 +239,18 @@ def run_backend(backend: str, model: str | None, prompt: str, timeout: int) -> s
     """Run the judge in an ISOLATED temp cwd — it gets everything in the prompt and cannot
     reach the corpus, so nothing it does can mutate a fact. We consume only its stdout."""
     with tempfile.TemporaryDirectory() as sandbox:
-        if backend == "opencode":
-            try:
+        try:
+            if backend == "opencode":
                 cmd = list(DEFAULTS["opencode_cmd"]) + (["-m", model] if model else [])
                 # Do NOT use a file attachment (-f) because opencode treats it as context
                 # and runs an agent loop that hallucinates nested JSON.
                 # Pass it directly via stdin so opencode treats it as the literal prompt.
                 rc, out, err = sh(cmd, cwd=sandbox, timeout=timeout, stdin_text=prompt)
-            except OSError:
-                pass
-        else:
-            cmd = list(DEFAULTS["claude_cmd"]) + (["--model", model] if model else [])
-            rc, out, err = sh(cmd, cwd=sandbox, timeout=timeout, stdin_text=prompt)
+            else:
+                cmd = list(DEFAULTS["claude_cmd"]) + (["--model", model] if model else [])
+                rc, out, err = sh(cmd, cwd=sandbox, timeout=timeout, stdin_text=prompt)
+        except OSError as e:
+            rc, out, err = -1, "", str(e)
 
     # A parseable verdict means the backend WORKED — return it and ignore log noise. A free
     # model's momentary "overloaded"/429 that opencode retried THROUGH lands in the --auto tool
