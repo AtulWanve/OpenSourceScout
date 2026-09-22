@@ -10,8 +10,8 @@ Before answering or taking action, you MUST read the following context files in 
 3. `REFERENCES.md` - For background material.
 
 **CRITICAL ROUTING INSTRUCTION:**
-This project relies on the Interpretable Context Methodology (ICM). You MUST read `CLAUDE.md` to find out which "Room" (folder) the user's task belongs in. 
-Once you enter that folder (e.g., `/scripts`, `/investigations`, `/setup`), you MUST read the `CONTEXT.md` located inside that folder before taking action.
+This project relies on the Interpretable Context Methodology (ICM). You MUST read `CLAUDE.md` to find out which "Room" (folder) the user's task belongs in (e.g., `/` for root files, `/scripts`, `/investigations`, `/setup`). 
+Once you enter that folder, you MUST read the `CONTEXT.md` located inside that folder (or the root `CONTEXT.md` if in `/`) before taking action.
 
 **CRITICAL CROSS-TOOL COMPATIBILITY:** 
 Treat `CLAUDE.md` exactly as you would treat your own native system instructions file (e.g., `.cursorrules`, `copilot-instructions.md`, or your native system prompt). Apply the rules defined in `CLAUDE.md` globally to all interactions, overriding any default behaviors.
