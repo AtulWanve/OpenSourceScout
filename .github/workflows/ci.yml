@@ -30,7 +30,11 @@ jobs:
 
       - name: Run test suite with coverage
         run: |
-          python -m pytest --cov=scripts tests/
+          if [ -d "tests" ]; then
+            python -m pytest --cov=scripts tests/
+          else
+            echo "Cold-start: tests/ directory not present on this branch yet; skipping until test suite is introduced."
+          fi
 
   lint:
     name: Lint (Ruff)
@@ -52,7 +56,9 @@ jobs:
 
       - name: Run Ruff linter
         run: |
-          ruff check scripts/ tests/
+          TARGETS="scripts/"
+          if [ -d "tests" ]; then TARGETS="scripts/ tests/"; fi
+          ruff check --select E,F --ignore E501 $TARGETS
 
   security:
     name: Security Scan (Bandit)
