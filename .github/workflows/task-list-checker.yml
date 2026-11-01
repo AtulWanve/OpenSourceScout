@@ -1,0 +1,20 @@
+name: Task List Checker
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened]
+
+jobs:
+  task-list-checker:
+    name: Check Incomplete Tasks
+    runs-on: ubuntu-latest
+    if: ${{ github.event.pull_request.user.login != 'dependabot[bot]' }}
+    permissions:
+      pull-requests: read
+      statuses: write
+
+    steps:
+      - name: Check for incomplete task list items
+        uses: Shopify/task-list-checker@main
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
