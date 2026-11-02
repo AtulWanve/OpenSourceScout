@@ -42,6 +42,8 @@ knowledge/INDEX*.md
 # python
 __pycache__/
 *.pyc
+.coverage
+htmlcov/
 investigations/
 config.local.yaml
 
