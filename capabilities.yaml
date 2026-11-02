@@ -18,7 +18,7 @@
 #   provides_specifics: free text for the nuance the coarse term loses
 #                       (e.g. "OpenAPI + GraphQL, property-based").
 #
-# Format:  term: [alias, alias, ...]   — aliases drive scripts/normalize_features.py
+# Format:  term: [alias, alias, ...]
 # ============================================================================
 
 capabilities:

@@ -1,22 +1,22 @@
-# Setup Stage (The Onboarder)
+# Setup
 
 ## Inputs
-- Layer 3 (reference): `../config.example.yaml` (Template for category configuration)
-- Layer 3 (reference): `../criteria.yaml` (Shared framework rule constraints)
+- `../config.example.yaml`: Base template for local configuration
+- `../criteria.yaml`: Default evaluation criteria and rules
 
 ## Process
-You are the Onboarding Agent. When a new user clones this repository, they enter this folder to initialize their workspace. Your job is to generate their personal configuration files based on their specific constraints.
+This folder handles initial workspace setup. Use it to generate local configuration files tailored to a user's workflow and criteria.
 
-When the user asks to "run setup" or "onboard me", conduct an interview by asking them these questions (one by one, or altogether if they prefer):
+When onboarding a user (e.g., when asked to "run setup" or "onboard me"), ask these questions to gather their preferences:
 1. **Budget Constraints:** Are paid dependencies/API keys allowed, or must everything be 100% free/open-source?
 2. **Tech Stack Constraints:** Are there any programming languages you refuse to adopt or deploy?
-3. **Team Size:** Are you a solo developer, or a team? (This affects the `too_big` and `independent` funnel logic).
-4. **Strategic Goals:** What are the top 3 categories of tools you are scouting for? (e.g., UI Frameworks, AI Agents, Databases).
+3. **Team Size:** Are you a solo developer or a team? (This affects the `too_big` and `independent` evaluation checks).
+4. **Target Categories:** What are the top 3 tool categories you want to scout? (e.g., UI Frameworks, AI Agents, Databases).
 
 Once you have gathered these answers:
-1. Generate a custom `config.local.yaml` utilizing their strategic goal categories.
-2. Generate user-specific rules in a separate `criteria.local.yaml` file instead of overwriting the shared `criteria.yaml`. These local rules reflect their budget and stack constraints. The execution engine performs a deterministic merge and validation of `criteria.local.yaml` against `criteria.yaml` before execution, ensuring the user's constraints override the base framework without modifying tracked files.
+1. Generate `config.local.yaml` with their selected categories.
+2. Save custom budget and stack rules in `criteria.local.yaml` instead of editing `criteria.yaml`. The pipeline automatically merges `criteria.local.yaml` over `criteria.yaml` at runtime, keeping tracked files clean.
 
 ## Outputs
-- `../config.local.yaml` -> (The user's personalized category map)
-- `../criteria.local.yaml` -> (The user's personalized rule set overrides)
+- `../config.local.yaml`: User's local category configuration
+- `../criteria.local.yaml`: User's local criteria overrides

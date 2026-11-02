@@ -20,10 +20,15 @@ from __future__ import annotations
 import datetime as dt
 import re
 import os
+import sys
 from collections import defaultdict
+from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
 import concurrent.futures
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import oss_config
 
 ROOT = Path(__file__).resolve().parents[1]
 REPOS = ROOT / "knowledge" / "repos"
@@ -31,7 +36,54 @@ KNOW = ROOT / "knowledge"
 TARGETS = KNOW / "targets"
 TODAY = dt.date.today().isoformat()
 
-ACTIONABLE = ["adopt", "merge", "independent", "combined", "too_big", "reference"]
+
+class _ActionableDispositions(Sequence):
+    """Dynamic container delegating to oss_config.get_dispositions() excluding rejected."""
+
+    def _items(self) -> list[str]:
+        return [d for d in oss_config.get_dispositions() if d != "rejected"]
+
+    def __iter__(self):
+        return iter(self._items())
+
+    def __contains__(self, item: object) -> bool:
+        return item in self._items()
+
+    def __len__(self) -> int:
+        return len(self._items())
+
+    def __getitem__(self, index):
+        return self._items()[index]
+
+    def __add__(self, other):
+        if isinstance(other, list):
+            return self._items() + other
+        if hasattr(other, "__iter__"):
+            return self._items() + list(other)
+        return NotImplemented
+
+    def __radd__(self, other):
+        if isinstance(other, list):
+            return other + self._items()
+        if hasattr(other, "__iter__"):
+            return list(other) + self._items()
+        return NotImplemented
+
+    def __eq__(self, other: object) -> bool:
+        if isinstance(other, (list, tuple, _ActionableDispositions)):
+            return self._items() == list(other)
+        return False
+
+    def __repr__(self) -> str:
+        return repr(self._items())
+
+
+ACTIONABLE = _ActionableDispositions()
+
+def actionable_order() -> list[str]:
+    """Configured ACTIONABLE dispositions, in config order."""
+    return list(ACTIONABLE)
+
 
 @dataclass(slots=True)
 class NoteMeta:
@@ -175,11 +227,12 @@ def parse_file(path_str: str) -> dict | None:
         raise RuntimeError(f"cannot read {path}: {exc}") from exc
 
     fm = parse_fm(head)
+    if "\n---" not in head[3:] and len(head) >= max_read:
+        raise RuntimeError(
+            f"front-matter in {path} exceeds the {max_read}-byte read window "
+            "without a closing '---' delimiter"
+        )
     if not fm:
-        if "\n---" not in head[3:] and len(head) >= max_read:
-            raise RuntimeError(
-                f"front-matter in {path} exceeds {max_read} bytes without closing delimiter"
-            )
         return None
 
     # We might need the full file for the verdict string if it's at the bottom.
@@ -216,10 +269,10 @@ def fmt(v) -> str:
 
 
 def lic_of(n: NoteMeta) -> str:
-    l = n.license
-    if isinstance(l, dict):
-        return fmt(l.get("name"))
-    return fmt(l)
+    lic = n.license
+    if isinstance(lic, dict):
+        return fmt(lic.get("name"))
+    return fmt(lic)
 
 def process_chunk(entries: list[str]) -> list[NoteMeta]:
     """Worker process function"""
@@ -274,6 +327,11 @@ def hub(notes: list[NoteMeta]) -> str:
     judged = [n for n in notes if n.disposition]
     queue = [n for n in by["unjudged"] if n.intake != "bulk"]
     swept = [n for n in by["unjudged"] if n.intake == "bulk"]
+    actionable = actionable_order()
+    unknown = sorted({
+        str(d) for d in by if str(d) not in actionable and str(d) not in ("rejected", "unjudged")
+    })
+    other = [n for name in unknown for k, v in by.items() if str(k) == name for n in v]
 
     head = f"**{len(judged)} judged candidates.**"
     if queue or swept:
@@ -299,16 +357,19 @@ def hub(notes: list[NoteMeta]) -> str:
         "| disposition | n |",
         "|---|---|",
     ]
-    for d in ACTIONABLE + ["rejected"]:
+    for d in actionable + ["rejected"]:
         if by.get(d):
             lines.append(f"| {d} | {len(by[d])} |")
+    if other:
+        names = ", ".join(unknown)
+        lines.append(f"| _other_ ({names}) | {len(other)} |")
     if queue:
         lines.append(f"| _unjudged (queue)_ | {len(queue)} |")
     if swept:
         lines.append(f"| _unjudged (swept)_ | {len(swept)} |")
     lines.append("")
 
-    for d in ACTIONABLE:
+    for d in actionable:
         group = by.get(d)
         if not group:
             continue
@@ -318,6 +379,18 @@ def hub(notes: list[NoteMeta]) -> str:
             lines.append(
                 f"| [[{n._slug}]] | {fmt(n.category)} | {lic_of(n)} | "
                 f"{fmt(n.status)} | {n._verdict or '-'} |"
+            )
+        lines.append("")
+
+    if other:
+        lines += [f"## other dispositions  ({len(other)})", "",
+                  "Values outside the configured disposition vocabulary are grouped here.", "",
+                  "| candidate | disposition | category | license | status | verdict |",
+                  "|---|---|---|---|---|---|"]
+        for n in sorted(other, key=lambda x: x._slug):
+            lines.append(
+                f"| [[{n._slug}]] | {fmt(n.disposition)} | {fmt(n.category)} | "
+                f"{lic_of(n)} | {fmt(n.status)} | {n._verdict or '-'} |"
             )
         lines.append("")
 
@@ -384,12 +457,32 @@ def features(notes: list[NoteMeta]) -> str:
         f"_Generated {TODAY}._  ·  **{len(idx)} features** across {len(notes)} candidates.",
         "",
         "The parts-bin index. Match a target's `needs_features` against this to assemble a",
-        "build-kit (set-cover). Back to [[INDEX]].",
+        "build-kit (set-cover). Candidates are ordered vertically by disposition (Actionable > Unjudged > Rejected) for optimal AI discovery. Back to [[INDEX]].",
         "",
     ]
+    actionable_names = actionable_order()
     for f in sorted(idx):
-        who = " · ".join(f"[[{n._slug}]]" for n in sorted(idx[f], key=lambda x: x._slug))
-        lines.append(f"- **{f}** — {who}")
+        lines.extend([f"## {f}", ""])
+        actionable, unjudged, rejected, other = [], [], [], []
+        for n in sorted(idx[f], key=lambda x: x._slug):
+            if not n.disposition or n.disposition == "unjudged":
+                unjudged.append(n)
+            elif n.disposition == "rejected":
+                rejected.append(n)
+            elif n.disposition in actionable_names:
+                actionable.append(n)
+            else:
+                other.append(n)
+
+        if actionable:
+            lines.extend(["### Actionable"] + [f"- [[{n._slug}]]" for n in actionable] + [""])
+        if unjudged:
+            lines.extend(["### Unjudged"] + [f"- [[{n._slug}]]" for n in unjudged] + [""])
+        if rejected:
+            lines.extend(["### Rejected"] + [f"- [[{n._slug}]]" for n in rejected] + [""])
+        if other:
+            lines.extend(["### Other dispositions"]
+                         + [f"- [[{n._slug}]] - {n.disposition}" for n in other] + [""])
     return "\n".join(lines)
 
 

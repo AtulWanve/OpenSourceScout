@@ -13,6 +13,10 @@
 # a portfolio you didn't know it picked up is how surprises happen.
 portfolio_source: local
 
+# Judge backend model (optional). Decouples backend model from code.
+# e.g., opencode/deepseek-v4.1-flash-free
+model: opencode/deepseek-v4.1-flash-free
+
 existing_projects:              # for the MERGE question + the `strategic` payoff
   - name: example-app
     what: "One sentence: what it does, and for whom."

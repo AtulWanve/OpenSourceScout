@@ -11,6 +11,7 @@ config.local.yaml and capabilities.yaml. Anything fancier is out of scope by des
 """
 from __future__ import annotations
 
+import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -19,6 +20,7 @@ EXAMPLE = ROOT / "config.example.yaml"
 CAPABILITIES = ROOT / "capabilities.yaml"
 CRITERIA = ROOT / "criteria.yaml"
 CRITERIA_LOCAL = ROOT / "criteria.local.yaml"
+TEMPLATE = ROOT / "knowledge" / "repos" / "_TEMPLATE.md"
 
 
 # ---------------------------------------------------------------- minimal yaml
@@ -134,12 +136,18 @@ def load_file(p: Path) -> dict:
 
 # ---------------------------------------------------------------- loaders
 def load_config() -> dict:
-    if not CONFIG.exists():
-        raise SystemExit(
-            f"! no config.local.yaml — copy the example and edit it:\n"
-            f"    cp {EXAMPLE.name} {CONFIG.name}"
+    if CONFIG.exists():
+        return load_file(CONFIG)
+    if EXAMPLE.exists():
+        print(
+            f"! config.local.yaml not found - falling back to {EXAMPLE.name} (example data)",
+            file=sys.stderr,
         )
-    return load_file(CONFIG)
+        return load_file(EXAMPLE)
+    raise SystemExit(
+        f"! no config.local.yaml - copy the example and edit it:\n"
+        f"    cp {EXAMPLE.name} {CONFIG.name}"
+    )
 
 def _merge_dicts(base: dict, override: dict) -> dict:
     """Recursively merge override dict into base dict."""
@@ -202,13 +210,16 @@ def get_criteria_text() -> str:
             return _scalar_str(v)
         return str(v)
 
-    def _literal(lines: list[str], pad: str, key: str | None, v: str) -> None:
+    def _literal(lines: list[str], pad: str, key: str | None, v: str, dash: str = "") -> None:
         if key is None:
-            lines.append(f"{pad}- |")
+            prefix = dash if dash else "- "
+            lines.append(f"{pad}{prefix}|")
+            inner_pad = pad + " " * len(prefix)
         else:
-            lines.append(f"{pad}{key}: |")
+            lines.append(f"{pad}{dash}{key}: |")
+            inner_pad = pad + " " * (len(dash) + 2 if dash else 2)
         for ln in v.split("\n"):
-            lines.append(f"{pad}  {ln}")
+            lines.append(f"{inner_pad}{ln}")
 
     def _kv(lines: list[str], pad: str, k, v) -> None:
         if isinstance(v, dict):
@@ -289,7 +300,9 @@ def get_portfolio() -> tuple[list[dict], str]:
     src = (cfg.get("portfolio_source") or "local").strip()
 
     if src == "local":
-        return cfg.get("existing_projects") or [], "local (config.local.yaml)"
+        source_file = CONFIG.name if CONFIG.exists() else EXAMPLE.name
+        label = f"local ({source_file})"
+        return cfg.get("existing_projects") or [], label
 
     ext = (ROOT / src).resolve() if not Path(src).is_absolute() else Path(src)
     if not ext.exists():
@@ -310,6 +323,43 @@ def get_portfolio() -> tuple[list[dict], str]:
 def get_capabilities() -> dict[str, list[str]]:
     """The controlled vocabulary for provides_features: {term: [aliases]}."""
     return (load_file(CAPABILITIES) or {}).get("capabilities") or {}
+
+
+def get_dispositions() -> list[str]:
+    """Return all 8 documented dispositions dynamically loaded from criteria.yaml (funnel)
+    or _TEMPLATE.md as fallback."""
+    fallback = ["independent", "too_big", "adopt", "merge", "upstream_pr", "simplify_fork", "combined", "rejected"]
+    valid_set = set(fallback)
+    funnel_disps: list[str] = []
+    try:
+        criteria_data = load_file(CRITERIA)
+        funnel = criteria_data.get("funnel")
+        if isinstance(funnel, list):
+            seen: set[str] = set()
+            raw = [item.get("disposition") for item in funnel if isinstance(item, dict) and item.get("disposition")]
+            funnel_disps = [d for d in raw if d in valid_set and not (d in seen or seen.add(d))]  # type: ignore[func-returns-value]
+            if len(funnel_disps) == 8:
+                return funnel_disps
+    except Exception:
+        pass
+    if TEMPLATE.exists():
+        try:
+            text = TEMPLATE.read_text(encoding="utf-8")
+            for line in text.splitlines():
+                if line.startswith("disposition:"):
+                    parts = line.split("#", 1)
+                    if len(parts) > 1:
+                        raw_disps = parts[1].split("<")[0].split("(")[0].strip()
+                        template_disps = [d.strip() for d in raw_disps.split("|") if d.strip()]
+                        if template_disps:
+                            fallback = template_disps
+                            break
+        except Exception:
+            pass
+    if funnel_disps:
+        seen = set(funnel_disps)
+        return funnel_disps + [d for d in fallback if d not in seen]
+    return fallback
 
 
 if __name__ == "__main__":
