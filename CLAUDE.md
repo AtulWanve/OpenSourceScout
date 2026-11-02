@@ -8,17 +8,18 @@ This project uses a strict Three-Layer Folder Architecture based on the Interpre
 **CRITICAL ROUTING INSTRUCTION:** 
 When the user gives you a task, you MUST first determine which "Room" (folder) it belongs to. You must then READ the `CONTEXT.md` in that folder BEFORE taking any action. If a task does not fit any room, ask the user before guessing.
 
-- `/` - The Root Room. Route here for tasks involving root-level files such as CLAUDE.md, AGENTS.md, and README.md. Read `/CONTEXT.md` before taking action.
-- `/setup` - The onboarding room. Route here if the user asks to "onboard", "setup", or configure their workspace constraints.
-- `/scripts` - The Engine. Route here to write Python, modify the pipeline, or debug `scout.py`.
-- `/prompts` - The Logic. Route here to edit AI instructions, backend json schemas, or LLM evaluation rules.
-- `/knowledge` - The Database. Route here to view raw repository markdown files, edit targets, or rebuild indexes.
-- `/inbox` - The Triage Room. Route here to review fetched repository digests and process pending intake items.
-- `/investigations` - The Analyst Room. Route here when the user asks questions like "Find an alternative to X", "Do we have a repo that does Y?", or any query searching for processed repos. You MUST read its `CONTEXT.md` to learn how to search the `INDEX.md` files properly instead of grepping the whole project.
-- `/.claude` - The Tooling Room. Route here to manage Claude Code specific settings, hooks, skills, or permission allowlists.
-- `/.github` - GitHub configuration room. Route here for GitHub Actions workflows and remote automation.
-- `/Methodology` - The Library. Reference material on the ICM architecture.
-- `/tests` - Test suite for the project scripts.
+- `/` - Root project files (`CLAUDE.md`, `AGENTS.md`, `README.md`, `CONTEXT.md`).
+- `/setup` - Onboarding and workspace configuration.
+- `/scripts` - Execution engine and Python pipeline scripts (`scout.py`, `build_index.py`).
+- `/prompts` - Prompt templates, schemas, and evaluation rules.
+- `/knowledge` - Repository notes, target definitions, and generated indexes.
+- `/inbox` - Incoming repository digests pending review.
+- `/investigations` - Repository research and capability searches (search `INDEX.md` files here rather than grepping the full repo).
+- `/.claude` - Claude Code configuration, settings, and custom skills.
+- `/.github` - GitHub Actions workflows and CI automation.
+- `/docs` - Documentation, milestones, and planning notes.
+- `/Methodology` - Reference architecture documentation.
+- `/tests` - Test suite for scripts and tooling.
 
 ## Directory Map
 ```text
@@ -32,6 +33,10 @@ When the user gives you a task, you MUST first determine which "Room" (folder) i
 │   │   ├── ci.yml
 │   │   ├── codeql.yml
 │   │   └── task-list-checker.yml
+│   └── CONTEXT.md
+├── /docs                        # Documentation and milestones
+│   ├── /milestones
+│   │   └── M0-foundation.md
 │   └── CONTEXT.md
 ├── /inbox                       # Incoming repo digests
 │   └── CONTEXT.md

@@ -59,22 +59,53 @@ JUDGE_LOG = ROOT / ".cache" / "judge" / "progress.jsonl"
 TODAY = dt.date.today().isoformat()
 
 DEFAULTS = {
-    # opencode reads the prompt from a -f attachment; claude reads it on stdin. A free model
-    # is the point — judging the backlog must not burn premium tokens. Override with --model.
+    # Both backends receive the prompt on stdin. A free model is the point: judging the backlog
+    # must not burn premium tokens. Override with --model.
+    # No --auto: repository content is untrusted, so permission requests are never approved on
+    # the user's behalf; the sandbox config in run_backend denies every tool and path instead.
     "opencode_cmd": ["opencode", "run"],
+    "opencode_model": "opencode/deepseek-v4.1-flash-free",
     "claude_cmd": ["claude", "-p"],
-    "timeout_sec": 900,   # an --auto agent run is multi-step + slow; 300s timed out mid-judge
-                          # (review_loop uses 900). Or drop --auto for a faster single-shot.
+    "timeout_sec": 900,   # a judge session is multi-step and slow; 300s timed out mid-judge
+                          # (review_loop uses 900).
     "abort_after_consecutive": 3,   # review_loop's guard: skip an isolated failure, but STOP the
                                     # run once the backend fails N in a row (rate-limited/overloaded).
     # Only consulted when the backend returned NO parseable verdict (see run_backend) — a real
     # stop, not a free model's transient blip mid-success. Bare "429" is gone: it matched any
-    # number containing 429 (a token count, a cost) in the --auto trace and forged a rate limit.
+    # number containing 429 (a token count, a cost) in the tool trace and forged a rate limit.
     "limit_markers": ["usage limit reached", "rate limit", "quota exceeded",
-                      "too many requests", "http 429", "overloaded"],
+                      "too many requests", "http 429", "overloaded",
+                      "insufficient account funds", "insufficient funds"],
 }
 
-DISPOSITIONS = ["independent", "too_big", "adopt", "merge", "combined", "rejected"]
+# The judge needs no tools: the facts, criteria, and source arrive on stdin and only stdout is
+# read back. This config is written into the isolated cwd so opencode's project-config discovery
+# applies it. Policies explicitly deny tool use so inherited agent configurations cannot authorize
+# tools, alongside permission rules denying every action.
+OPENCODE_SANDBOX_CONFIG = {
+    "$schema": "https://opencode.ai/config.json",
+    "policies": [
+        {"action": "tool.use", "resource": "*", "effect": "deny"},
+    ],
+    "permissions": [
+        {"action": "*", "resource": "*", "effect": "deny"},
+        {"action": "tool.use", "resource": "*", "effect": "deny"},
+        {"action": "read", "resource": "*", "effect": "deny"},
+        {"action": "edit", "resource": "*", "effect": "deny"},
+        {"action": "glob", "resource": "*", "effect": "deny"},
+        {"action": "grep", "resource": "*", "effect": "deny"},
+        {"action": "shell", "resource": "*", "effect": "deny"},
+        {"action": "external_directory", "resource": "*", "effect": "deny"},
+        {"action": "webfetch", "resource": "*", "effect": "deny"},
+        {"action": "websearch", "resource": "*", "effect": "deny"},
+        {"action": "subagent", "resource": "*", "effect": "deny"},
+        {"action": "skill", "resource": "*", "effect": "deny"},
+        {"action": "question", "resource": "*", "effect": "deny"},
+        {"action": "execute", "resource": "*", "effect": "deny"},
+    ],
+}
+
+DISPOSITIONS = oss_config.get_dispositions()
 STATUSES = ["active", "parked_capital"]
 PAYOFFS = {"commercial", "reputation", "learning", "strategic",
            "strategic:product", "strategic:capability", "none"}
@@ -129,6 +160,7 @@ def build_context() -> dict:
         "cap_terms": set(caps.keys()),
         "portfolio": f"source: {src}\n" + ("\n".join(proj_lines) or "  (no projects)"),
         "categories": categories,
+        "model": cfg.get("model"),
     }
 
 
@@ -241,19 +273,22 @@ def run_backend(backend: str, model: str | None, prompt: str, timeout: int) -> s
     with tempfile.TemporaryDirectory() as sandbox:
         try:
             if backend == "opencode":
-                cmd = list(DEFAULTS["opencode_cmd"]) + (["-m", model] if model else [])
+                (Path(sandbox) / "opencode.json").write_text(
+                    json.dumps(OPENCODE_SANDBOX_CONFIG, indent=2), encoding="utf-8")
+                # fallback model pinned to contributor-free; upgrade when switching tiers
+                chosen = model or DEFAULTS["opencode_model"]
+                cmd = list(DEFAULTS["opencode_cmd"]) + ["--model", chosen]
                 # Do NOT use a file attachment (-f) because opencode treats it as context
                 # and runs an agent loop that hallucinates nested JSON.
                 # Pass it directly via stdin so opencode treats it as the literal prompt.
-                rc, out, err = sh(cmd, cwd=sandbox, timeout=timeout, stdin_text=prompt)
             else:
                 cmd = list(DEFAULTS["claude_cmd"]) + (["--model", model] if model else [])
-                rc, out, err = sh(cmd, cwd=sandbox, timeout=timeout, stdin_text=prompt)
+            rc, out, err = sh(cmd, cwd=sandbox, timeout=timeout, stdin_text=prompt)
         except OSError as e:
             rc, out, err = -1, "", str(e)
 
     # A parseable verdict means the backend WORKED — return it and ignore log noise. A free
-    # model's momentary "overloaded"/429 that opencode retried THROUGH lands in the --auto tool
+    # model's momentary "overloaded"/429 that opencode retried THROUGH lands in the tool
     # trace on stderr; scanning that BEFORE checking for a verdict turned a successful judge into
     # a false "rate limit" and aborted the whole run. Only a MISSING verdict + a limit signal is
     # a genuine stop.
@@ -274,6 +309,10 @@ _DISPOSITION_MAP = {
     "combination": "combined",
     "independent_project": "independent",
     "too big": "too_big",
+    "upstream-pr": "upstream_pr",
+    "upstream pr": "upstream_pr",
+    "simplify-fork": "simplify_fork",
+    "simplify fork": "simplify_fork",
 }
 
 
@@ -497,6 +536,9 @@ def validate(v: dict, ctx: dict) -> list[str]:
     return errs
 
 
+validate_verdict = validate
+
+
 # --------------------------------------------------------------------------- write
 def _yaml_list(xs) -> str:
     return "[" + ", ".join(str(x) for x in (xs or [])) + "]"
@@ -663,7 +705,7 @@ def propose_verdict(backend: str, model: str | None, prompt: str, ctx: dict,
         f"## CRITIC MODE — FINAL ATTEMPT\n"
         f"You failed to generate valid output twice.\n"
         f"Errors from attempt 1:\n" + "\n".join(f"  - {e}" for e in errs) + "\n"
-        f"Errors from attempt 2:\n" + "\n".join(f"  - {e}" for e in errs2) + "\n\n"
+        "Errors from attempt 2:\n" + "\n".join(f"  - {e}" for e in errs2) + "\n\n"
         f"Your failed output from attempt 2:\n\n{out2.strip()[:2000] or '(nothing)'}\n\n"
         f"Take a deep breath. First, briefly explain exactly WHY your previous output violated "
         f"the schema or rules (e.g., 'I invented a feature that was not in the vocabulary' or 'I output text instead of JSON').\n"
@@ -684,6 +726,40 @@ def propose_verdict(backend: str, model: str | None, prompt: str, ctx: dict,
                 verdict["provides_specifics"] = list(specs) + invalid_feats
                 errs3 = validate(verdict, ctx)
     return (verdict if not errs3 else None), errs3, True, out3
+
+
+# --------------------------------------------------------------------------- version guard
+def _check_opencode_version() -> None:
+    """Verify the installed OpenCode CLI speaks the V2 configuration format.
+
+    The sandbox config written into the isolated cwd (OPENCODE_SANDBOX_CONFIG) uses
+    the V2 schema: $schema, policies, and permissions keys. A V1 binary silently
+    ignores those keys, which means every tool-use and filesystem action the config
+    is meant to block would be permitted. We therefore refuse to run if the installed
+    binary is V1 or if its version cannot be determined.
+    """
+    try:
+        rc, out, err = sh(["opencode", "--version"], timeout=15)
+    except OSError as e:
+        sys.exit(f"[Error] Could not run 'opencode --version': {e}. "
+                 "Ensure opencode is installed and on PATH.")
+
+    combined = (out + err).strip()
+    m = re.search(r"v?(\d+)\.", combined)
+    if not m:
+        sys.exit(
+            f"[Error] opencode version could not be determined (output: {combined!r}). "
+            "Upgrade opencode to v2 or later and retry. Refusing to run without a "
+            "confirmed V2 installation - the sandbox config is only honoured by V2+."
+        )
+
+    major = int(m.group(1))
+    if major < 2:
+        sys.exit(
+            f"[Error] opencode v{major} is installed but V2 is required. "
+            "The sandbox isolation policy (policies/permissions in opencode.json) is "
+            "only supported from V2 onwards. Upgrade opencode and retry."
+        )
 
 
 # --------------------------------------------------------------------------- main
@@ -730,7 +806,12 @@ def main() -> None:
     if not backend:
         sys.exit(c("No judge backend found (opencode/claude). The corpus stands regardless — "
                    "judging is optional; judge by hand, or install a backend.", "red"))
-    print(c(f"backend: {backend}" + (f" (model {args.model})" if args.model else ""), "cyan"))
+    if backend == "opencode":
+        _check_opencode_version()
+        model = args.model or ctx.get("model") or DEFAULTS["opencode_model"]
+    else:
+        model = args.model
+    print(c(f"backend: {backend}" + (f" (model {model})" if model else ""), "cyan"))
 
     judged = failed = consecutive = 0
     abort_after = DEFAULTS["abort_after_consecutive"]
@@ -748,19 +829,21 @@ def main() -> None:
         prompt, evidence = build_prompt(p.read_text(encoding="utf-8", errors="replace"), p.stem, ctx)
         try:
             verdict, errs, retried, raw_out = propose_verdict(
-                backend, args.model, prompt, ctx, DEFAULTS["timeout_sec"])
+                backend, model, prompt, ctx, DEFAULTS["timeout_sec"])
         except LimitReached as e:
-            print(c(f"  [Error] Token limit reached: {e}. Stopping early. Re-run to resume.", "yellow"))
+            print(c(f"  [Error] Backend limit or billing error: {e}. Stopping early. Re-run to resume.", "yellow"))
             stopped_early = "limit"
             break
         except (RuntimeError, subprocess.TimeoutExpired) as e:
-            failed += 1; consecutive += 1
-            print(c(f"  [AI Error] The model timed out or failed to respond. Skipped.", "red"))
+            failed += 1
+            consecutive += 1
+            print(c("  [AI Error] The model timed out or failed to respond. Skipped.", "red"))
             log_progress({"note": p.stem, "result": "backend_error", "detail": str(e)[:200]})
             continue
 
         if verdict is None:                                    # invalid JSON/gate even after the retry
-            failed += 1; consecutive += 1
+            failed += 1
+            consecutive += 1
             tail = " (after critic loop)" if retried else ""
             print(c(f"  [AI Error] The model failed to output a valid structured verdict{tail}. Skipped.", "red"))
             log_progress({"note": p.stem, "result": "gate_rejected", "errors": errs,

@@ -48,6 +48,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 REPOS = ROOT / "knowledge" / "repos"
+TEMPLATE_PATH = REPOS / "_TEMPLATE.md"
 DAILY = ROOT / "knowledge" / "daily"
 INBOX = ROOT / "inbox"
 PACKS = ROOT / ".cache" / "packs"
@@ -134,7 +135,7 @@ def gh(path: str) -> dict | list:
 
     for attempt in range(3):
         try:
-            with urllib.request.urlopen(req, timeout=30) as r:
+            with urllib.request.urlopen(req, timeout=30) as r:  # nosec B310
                 return json.loads(r.read().decode("utf-8"))
         except urllib.error.HTTPError as e:
             # 403/429 with no quota left is a rate limit; a 403 WITH quota left is a real
@@ -144,7 +145,7 @@ def gh(path: str) -> dict | list:
             reset = int(e.headers.get("X-RateLimit-Reset") or 0)
             limited = e.code in (403, 429) and remaining == "0"
             raise GHError(e.code, url, rate_limited=limited, reset=reset, body=body) from None
-        except (urllib.error.URLError, TimeoutError, ConnectionError, http.client.IncompleteRead) as e:
+        except (urllib.error.URLError, TimeoutError, ConnectionError, http.client.IncompleteRead):
             if attempt < 2:
                 time.sleep(1)
                 continue
@@ -163,7 +164,7 @@ def rate_budget() -> tuple[int, int]:
 def parse_target(raw: str) -> tuple[str, str, str | None]:
     """-> ('repo'|'account', owner, name|None)"""
     s = raw.strip().rstrip("/")
-    s = re.sub(r"^https?://(www\.)?github\.com/", "", s)
+    s = re.sub(r"^(https?://)?(www\.)?github\.com/", "", s)
     s = re.sub(r"\.git$", "", s)
     parts = [p for p in s.split("/") if p]
     if len(parts) >= 2:
@@ -374,6 +375,69 @@ def license_from_note(p: Path) -> tuple[str, str, list[str]] | None:
 
 
 # ---------------------------------------------------------------- rendering
+def load_template_funnel() -> str:
+    """Extract funnel result blocks from _TEMPLATE.md to preserve all documented funnel blocks."""
+    if TEMPLATE_PATH.exists():
+        try:
+            text = TEMPLATE_PATH.read_text(encoding="utf-8")
+            if "# --- funnel results" in text:
+                part = text.split("# --- funnel results", 1)[1]
+                for delim in ["\ntags:", "\n---", "\n# ==== FACTS"]:
+                    if delim in part:
+                        part = part.split(delim, 1)[0]
+                return ("# --- funnel results" + part).strip()
+        except Exception:
+            pass
+    return """# --- funnel results (fill the ones reached) ---
+step1_independent:
+  worth_doing: null        # true | false  (reason in prose below)
+  solo_ai_scope: null      # true | false
+step1b_too_big:
+  worth_doing: null        # true (always true for too_big - it's worthy but out of scope)
+  why_too_big: null        # what specifically needs a team (e.g. "ongoing moderation", "multi-platform ops")
+merge:
+  target: null             # existing project name, or "build-pipeline" (a strategic:capability merge), or null
+  mode: null               # as_is | modify_fully | harvest_parts
+  harvest_type: null       # code | blueprint  (blueprint = reimplement; also sidesteps copyleft)
+adopt:
+  serves: null             # product_workflow | build_pipeline   (for disposition: adopt - use as-is, unchanged)
+upstream_pr:
+  ux_issue: null           # what specific UX/complexity needs fixing
+  pr_scope: null           # rough estimate of what the PR would touch
+simplify_fork:
+  ux_issue: null           # what specific UX/complexity needs fixing
+  wrapper_type: null       # new-ui | simplified-api | config-generator
+  license_check: null      # pass | fail (must be checked for commercial use)
+combination:
+  covers_target: null      # target slug this contributes to, or null
+  members: []              # other candidate slugs in the same build-kit"""
+
+
+def load_template_dispositions() -> str:
+    """Return documented disposition options from oss_config or _TEMPLATE.md."""
+    try:
+        sys.path.insert(0, str(ROOT / "scripts"))
+        import oss_config
+        disps = oss_config.get_dispositions()
+        if disps:
+            return " | ".join(disps)
+    except Exception:
+        pass
+    if TEMPLATE_PATH.exists():
+        try:
+            text = TEMPLATE_PATH.read_text(encoding="utf-8")
+            for line in text.splitlines():
+                if line.startswith("disposition:"):
+                    parts = line.split("#", 1)
+                    if len(parts) > 1:
+                        raw = parts[1].split("<")[0].split("(")[0].strip()
+                        if raw:
+                            return raw
+        except Exception:
+            pass
+    return "independent | too_big | adopt | merge | upstream_pr | simplify_fork | combined | rejected"
+
+
 def render_note(r: dict, readme: str, pack_path: Path | None, intake: str = "targeted",
                 pack_sha: str | None = None) -> str:
     owner = r["owner"]["login"]
@@ -387,6 +451,8 @@ def render_note(r: dict, readme: str, pack_path: Path | None, intake: str = "tar
                     f"packed_sha: {pack_sha or 'null'}       # commit the pack is pinned to (evidence snapshot)")
     else:
         packline = "pack: null\npacked_sha: null"
+    funnel_blocks = load_template_funnel()
+    disp_opts = load_template_dispositions()
     return f"""---
 candidate: "{owner}/{name}"
 type: repo
@@ -397,25 +463,22 @@ judged_by: automated          # this note is FACTS ONLY until a judge fills the 
                               # at it -> then automated+human | automated+ai. Fetch needs no LLM.
 intake: {intake}              # targeted = deliberately scouted | bulk = account sweep, nobody has triaged it
 
-# ==== VERDICT — filled by a judge (you, or any AI consumer). Everything below is pre-filled facts. ====
-disposition: null           # independent | too_big | adopt | merge | combined | rejected  (mirrors top log entry)
+# ==== VERDICT - filled by a judge (you, or any AI consumer). Everything below is pre-filled facts. ====
+disposition: null           # {disp_opts}  (mirrors top log entry)
 status: null                # active | parked_capital
-judgments: none             # none | "<N> entries, last <date>" — set when first judged; mirrors the log
+judgments: none             # none | "<N> entries, last <date>" - set when first judged; mirrors the log
 provides_features: []
 provides_specifics: []      # free-text nuance the vocabulary loses
 category: null              # the judge picks one from config.local.yaml categories (interpretation, not a fact)
 payoff: []                  # commercial | reputation | learning | strategic(:product|:capability) | none
-                            # (always present; none = evaluated → no payoff, stands alone, forces rejected)
+                            # (always present; none = evaluated -> no payoff, stands alone, forces rejected)
 liability_risk: null
 capital_to_launch: null     # zero | needs_money
 paid_dependencies: []
 install_risk: null          # none | manual_review | agent_forbidden  (REQUIRED for adopt)
-step1_independent: {{ worth_doing: null, solo_ai_scope: null }}
-adopt: {{ serves: null }}
-merge: {{ target: null, mode: null, harvest_type: null }}
-combination: {{ covers_target: null, members: [] }}
+{funnel_blocks}
 
-# ==== FACTS — fetched {TODAY}, do not hand-edit (a judge never writes below this line) ====
+# ==== FACTS - fetched {TODAY}, do not hand-edit (a judge never writes below this line) ====
 stars: {r.get('stargazers_count', 0)}
 forks: {r.get('forks_count', 0)}
 open_issues: {r.get('open_issues_count', 0)}
@@ -449,7 +512,7 @@ tags: [{', '.join(topics[:10])}]
 
 ## Judgment log
 
-_No judgment yet — facts only (intake: {intake}). A review APPENDS the first entry here
+_No judgment yet - facts only (intake: {intake}). A review APPENDS the first entry here
 (trigger: initial) and fills the current-verdict fields above. Newest entry is always the active
 verdict; see knowledge/repos/_TEMPLATE.md for the entry shape (Conclusion / Changed / Corrected /
 The move / Risks). Record the outcome, not the discussion._

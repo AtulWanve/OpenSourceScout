@@ -130,31 +130,26 @@ def main():
     print(c(f"Running optimizer via {backend}... (this may take a minute)", "yellow"))
 
     import tempfile
-    import os
     import subprocess
     import shutil
 
     # Run the backend directly without judge_loop's hardcoded "output JSON verdict" wrapper
     with tempfile.TemporaryDirectory() as sandbox:
         if backend == "opencode":
-            fd, pf = tempfile.mkstemp(prefix="oss_opt_", suffix=".md")
-            os.close(fd)
-            Path(pf).write_text(meta_prompt, encoding="utf-8")
-            try:
-                cmd = ["opencode", "run", "--auto"] + (["-m", args.model] if args.model else [])
-                cmd += ["Write a rewritten prompt template for the application described in the attached file. Output your critique in a <critique> block, and the new prompt in a markdown block.", "-f", pf]
+            judge_loop._check_opencode_version()
+            cfg = judge_loop.oss_config.load_config() if hasattr(judge_loop, "oss_config") else {}
+            opt_model = args.model or cfg.get("model") or judge_loop.DEFAULTS.get("opencode_model")
+            (Path(sandbox) / "opencode.json").write_text(
+                json.dumps(judge_loop.OPENCODE_SANDBOX_CONFIG, indent=2), encoding="utf-8"
+            )
+            cmd = ["opencode", "run", "--model", opt_model]
 
-                resolved = shutil.which(cmd[0])
-                if resolved:
-                    cmd[0] = resolved
+            resolved = shutil.which(cmd[0])
+            if resolved:
+                cmd[0] = resolved
 
-                r = subprocess.run(cmd, cwd=sandbox, capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=600)
-                result = r.stdout
-            finally:
-                try:
-                    os.remove(pf)
-                except OSError:
-                    pass
+            r = subprocess.run(cmd, cwd=sandbox, input=meta_prompt, capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=600)
+            result = r.stdout
         else:
             cmd = ["claude", "-p"] + (["--model", args.model] if args.model else [])
 

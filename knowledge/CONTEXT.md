@@ -1,16 +1,17 @@
-# Knowledge Stage (The Database)
+# Knowledge Base
 
 ## Inputs
-- Layer 4 (working): `repos/*.md` (Raw repository notes)
-- Layer 3 (reference): `targets/*.md` (Business/strategic goals)
+- `repos/*.md`: Raw repository notes and evaluations
+- `targets/*.md`: Build-kit target definitions
+- `daily/*.md`: Daily sweep activity logs
 
 ## Process
-You are operating in the state persistence layer. This is where the results of the pipeline live.
-- Notes in `repos/` are the canonical record and source of truth.
-- Do not manually edit the `INDEX` files. If the data is incorrect, apply "Semantic Debugging": fix the source note in `repos/` or fix the prompt in `../prompts/`.
-- Once the source is fixed, trigger the rebuild process.
+This directory stores pipeline outputs and repository notes:
+- Notes in `repos/` are the source of truth.
+- Do not manually edit the `INDEX` files. If data is incorrect, fix the source note in `repos/` or update the prompt in `../prompts/`.
+- Once the source note or prompt is fixed, rebuild the indexes.
 
 ## Outputs
-- `INDEX.md` -> (Rendered human-readable view)
-- `INDEX-inventory.md` -> (Rendered human-readable view)
-- `INDEX-features.md` -> (Rendered human-readable view)
+- `INDEX.md`: Main repository overview index
+- `INDEX-inventory.md`: Repository inventory index
+- `INDEX-features.md`: Capability and feature mapping index

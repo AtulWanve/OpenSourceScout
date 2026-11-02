@@ -255,7 +255,7 @@ Three model-level choices behind this:
   schema + [`prompts/judge_worker.md`](prompts/judge_worker.md) for the judging pass. ✅
 - **Phase 2 (partial):** judging layer — `judge_loop.py` + `judge_worker.md` built;
   append-only log working. Prompt alignment with `_TEMPLATE.md` fields in progress.
-- **Phase 3 (partial):** feature vocabulary (`capabilities.yaml`) + `normalize_features.py`
+- **Phase 3 (partial):** feature vocabulary (`capabilities.yaml`)
   + derived indexes (`scripts/build_index.py`) built; the target assembler (set-cover,
   step 4 combined) is next.
 - **Phase 4 (partial):** account-sweep intake + daily logs built; GitHub search/trending
