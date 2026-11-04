@@ -18,8 +18,6 @@ knowledge/repos/*
 !knowledge/repos/_TEMPLATE.md
 knowledge/targets/*
 !knowledge/targets/_TEMPLATE.md
-knowledge/topics/*
-!knowledge/topics/.gitkeep
 knowledge/daily/*
 !knowledge/daily/.gitkeep
 knowledge/combinations/
