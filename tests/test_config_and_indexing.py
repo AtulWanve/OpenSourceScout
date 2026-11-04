@@ -3,6 +3,8 @@
 import sys
 from pathlib import Path
 
+import pytest
+
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 
@@ -21,6 +23,39 @@ def test_load_config_falls_back_to_example_when_local_missing(monkeypatch, tmp_p
     assert cfg == expected
     assert isinstance(cfg, dict)
     assert "categories" in cfg
+
+
+def test_load_config_prefers_local_when_present(monkeypatch, tmp_path):
+    """Verify load_config() prioritizes config.local.yaml over config.example.yaml."""
+    local_cfg = tmp_path / "config.local.yaml"
+    local_cfg.write_text("categories: [custom_local_category]\n", encoding="utf-8")
+    monkeypatch.setattr(oss_config, "CONFIG", local_cfg)
+
+    cfg = oss_config.load_config()
+    assert cfg == {"categories": ["custom_local_category"]}
+
+
+def test_load_config_raises_system_exit_when_both_missing(monkeypatch, tmp_path):
+    """Verify load_config() raises an informative SystemExit when both config files are absent."""
+    missing_local = tmp_path / "missing_config.local.yaml"
+    missing_example = tmp_path / "missing_config.example.yaml"
+    monkeypatch.setattr(oss_config, "CONFIG", missing_local)
+    monkeypatch.setattr(oss_config, "EXAMPLE", missing_example)
+
+    with pytest.raises(SystemExit) as exc_info:
+        oss_config.load_config()
+
+    err = str(exc_info.value)
+    assert "! no config.local.yaml - copy the example and edit it:" in err
+
+
+def test_zero_config_environment_baseline_invariants():
+    """Verify repository baseline invariants: config.example.yaml is tracked and valid."""
+    assert oss_config.EXAMPLE.exists(), "config.example.yaml must exist as the baseline template"
+    example_cfg = oss_config.load_file(oss_config.EXAMPLE)
+    assert isinstance(example_cfg, dict), "config.example.yaml must parse to a dictionary"
+    assert "categories" in example_cfg, "config.example.yaml must define categories"
+    assert "portfolio_source" in example_cfg, "config.example.yaml must define portfolio_source"
 
 
 def test_actionable_dispositions_derived_from_criteria(monkeypatch):

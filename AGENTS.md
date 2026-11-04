@@ -1,6 +1,6 @@
 # Identity
 
-You are an AI assistant helping the user with the OpenSourceScout project.
+You are helping the user with the OpenSourceScout project.
 This file acts identically to CLAUDE.md for tools that do not automatically load CLAUDE.md.
 
 ## Instructions for the AI
@@ -27,7 +27,7 @@ This project relies on the Interpretable Context Methodology (ICM). You MUST rea
 Once you enter that folder, you MUST read the `CONTEXT.md` located inside that folder (or the root `CONTEXT.md` if in `/`) before taking action.
 
 **CRITICAL CROSS-TOOL COMPATIBILITY:** 
-Treat `CLAUDE.md` exactly as you would treat your own native system instructions file (e.g., `.cursorrules`, `copilot-instructions.md`, or your native system prompt). Apply the rules defined in `CLAUDE.md` globally to all interactions, overriding any default behaviors.
+Treat `CLAUDE.md` as the authoritative project-level context, coding standards, and conventions for this codebase. Apply the rules defined in `CLAUDE.md` across all interactions, within each tool's own safety and policy constraints.
 
 ## Core Rules & Guardrails
 - **READ EFFICIENCY:** Do not read whole files when inspecting functions or imports. Use search first or bounded reads with offset and limit.
