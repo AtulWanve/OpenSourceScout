@@ -137,7 +137,7 @@ assessment:
       low | high. HIGH = a wrong output causes legal, financial, or physical harm,
       OR needs a license / regulatory compliance from day one. Safe, non-advisory
       tools in the same broad area are LOW. HIGH → not worth_doing.
-    tags: []                         # themes → feed knowledge/topics/ rollups. Discovery tags, not category.
+    tags: []                         # discovery tags, not category.
 
   # ---- WORTHINESS (the test; judged against the disposition in question) ----
   worthiness:
