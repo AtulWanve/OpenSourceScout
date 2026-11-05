@@ -204,7 +204,7 @@ OpenSourceScout/
 ├─ SPEC.md                         PUBLIC   design + rationale
 ├─ criteria.yaml                   PUBLIC   the rules (no private project names)
 ├─ capabilities.yaml               PUBLIC   controlled feature vocabulary
-├─ config.example.yaml             PUBLIC   config template (copy to config.local.yaml)
+├─ config.example.yaml             PUBLIC   config template (cascades if config.local.yaml is absent)
 ├─ .env.example                    PUBLIC   env template (GITHUB_TOKEN)
 ├─ prompts/judge_worker.md         PUBLIC   the judge prompt used by judge_loop.py
 ├─ knowledge/repos/_TEMPLATE.md    PUBLIC   the note schema (real notes below are ignored)
@@ -214,7 +214,7 @@ OpenSourceScout/
 │
 ├─ config.local.yaml               PRIVATE  your portfolio, standards, categories
 ├─ knowledge/repos/*               PRIVATE  verdict notes
-├─ knowledge/{targets,topics,daily}/*  PRIVATE
+├─ knowledge/{targets,daily}/*         PRIVATE
 ├─ knowledge/INDEX*.md             PRIVATE  generated indexes (features → candidates)
 ├─ inbox/*                         PRIVATE  repos queued to evaluate
 └─ project_enhancement_ideas.md    PRIVATE  orphan brainstorm — git-ignored
@@ -259,5 +259,5 @@ Three model-level choices behind this:
   + derived indexes (`scripts/build_index.py`) built; the target assembler (set-cover,
   step 4 combined) is next.
 - **Phase 4 (partial):** account-sweep intake + daily logs built; GitHub search/trending
-  intake and topic rollups pending.
+  intake pending.
 - **Pending:** idea track — a judge routes a raw idea down the same funnel.

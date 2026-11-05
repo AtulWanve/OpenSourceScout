@@ -70,7 +70,7 @@ combination:
   covers_target: null      # target slug this contributes to, or null
   members: []              # other candidate slugs in the same build-kit
 
-tags: []                   # themes → feed knowledge/topics/ rollups
+tags: []                   # discovery tags, not category
 ---
 
 ## Judgment log

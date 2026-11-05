@@ -33,7 +33,9 @@ When the user gives you a task, you MUST first determine which "Room" (folder) i
 │   │   ├── ci.yml
 │   │   ├── codeql.yml
 │   │   └── task-list-checker.yml
-│   └── CONTEXT.md
+│   ├── CONTEXT.md
+│   ├── ISSUE_TEMPLATE.md
+│   └── pull_request_template.md
 ├── /docs                        # Documentation and milestones
 │   ├── /milestones
 │   │   └── M0-foundation.md

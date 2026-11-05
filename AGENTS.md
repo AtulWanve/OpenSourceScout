@@ -11,7 +11,7 @@ Before answering or taking action, you MUST read the following context files in 
 
 **CRITICAL ROUTING INSTRUCTION:**
 This project relies on the Interpretable Context Methodology (ICM). You MUST read `CLAUDE.md` to find out which "Room" (folder) the user's task belongs in:
-- `/` - Root files (`CLAUDE.md`, `AGENTS.md`, `README.md`, `CONTEXT.md`)
+- `/` - Root project files (`CLAUDE.md`, `AGENTS.md`, `README.md`, `CONTEXT.md`, `SPEC.md`, `capabilities.yaml`, `criteria.yaml`, `config.example.yaml`)
 - `/setup` - Onboarding and workspace configuration
 - `/scripts` - Execution engine and Python pipeline scripts
 - `/prompts` - Prompt templates, schemas, and evaluation rules
@@ -19,7 +19,7 @@ This project relies on the Interpretable Context Methodology (ICM). You MUST rea
 - `/inbox` - Incoming repository digests pending review
 - `/investigations` - Repository research and capability searches (search `INDEX.md`)
 - `/.claude` - Claude Code configuration, settings, and skills
-- `/.github` - GitHub configuration and CI workflows
+- `/.github` - GitHub configuration, CI workflows, and issue/PR templates
 - `/docs` - Documentation, milestones, and planning notes
 - `/Methodology` - Reference architecture documentation
 - `/tests` - Test suite for scripts and tooling
@@ -28,6 +28,12 @@ Once you enter that folder, you MUST read the `CONTEXT.md` located inside that f
 
 **CRITICAL CROSS-TOOL COMPATIBILITY:** 
 Treat `CLAUDE.md` as the authoritative project-level context, coding standards, and conventions for this codebase. Apply the rules defined in `CLAUDE.md` across all interactions, within each tool's own safety and policy constraints.
+
+## Commands
+- Test: `python -m pytest tests/`
+- Run: `python scripts/run.py <target>`
+- Scout: `python scripts/scout.py <target>`
+- Index: `python scripts/build_index.py`
 
 ## Core Rules & Guardrails
 - **READ EFFICIENCY:** Do not read whole files when inspecting functions or imports. Use search first or bounded reads with offset and limit.

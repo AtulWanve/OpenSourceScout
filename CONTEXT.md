@@ -5,7 +5,7 @@ OpenSourceScout is a scouting framework for open source projects. It is designed
 
 ## What good looks like
 - Clean, modular, well-documented code.
-- Reliable repository parsing and scoring.
+- Reliable repository parsing and routing.
 - Clear, predictable folder structure that keeps agent context focused.
 
 ## What to avoid
