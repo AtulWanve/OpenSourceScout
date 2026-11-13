@@ -5,7 +5,7 @@
 - Architecture and design notes
 
 ## Process
-- Track project milestones, goals, and phase progress
+- Track project milestones, goals, and progress
 - Maintain project planning documents and release checklists
 
 ## Outputs

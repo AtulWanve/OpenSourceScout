@@ -76,3 +76,67 @@ def test_actionable_dispositions_derived_from_criteria(monkeypatch):
     expected_default = [d for d in oss_config.get_dispositions() if d != "rejected"]
     assert list(build_index.ACTIONABLE) == expected_default
     assert "rejected" not in build_index.ACTIONABLE
+
+
+def test_no_dead_topics_folder_references():
+    """Verify dead references to non-existent knowledge/topics folder are removed."""
+    repo_root = ROOT
+    gitignore_text = (repo_root / ".gitignore").read_text(encoding="utf-8")
+    assert "knowledge/topics" not in gitignore_text
+
+    criteria_text = (repo_root / "criteria.yaml").read_text(encoding="utf-8")
+    assert "knowledge/topics" not in criteria_text
+
+    template_text = (repo_root / "knowledge" / "repos" / "_TEMPLATE.md").read_text(encoding="utf-8")
+    assert "knowledge/topics" not in template_text
+
+    spec_text = (repo_root / "SPEC.md").read_text(encoding="utf-8")
+    assert "topics" not in spec_text.split("knowledge/{")[1].split("}")[0] if "knowledge/{" in spec_text else True
+
+    readme_text = (repo_root / "README.md").read_text(encoding="utf-8")
+    assert "{topics," not in readme_text
+
+
+def test_methodology_and_phantom_folders_invariants():
+    """Verify Methodology is ignored and not falsely tracked as a repo room."""
+    repo_root = ROOT
+    gitignore_text = (repo_root / ".gitignore").read_text(encoding="utf-8")
+    assert "Methodology/" in gitignore_text, "Methodology/ must be ignored in .gitignore"
+    assert "knowledge/combinations" not in gitignore_text, "phantom knowledge/combinations must not be in .gitignore"
+    assert "\nindex/\n" not in gitignore_text, "phantom index/ must not be in .gitignore"
+
+    claude_text = (repo_root / "CLAUDE.md").read_text(encoding="utf-8")
+    assert "- /Methodology" not in claude_text, "Methodology must not be listed as a tracked room in CLAUDE.md"
+    assert "├── /Methodology" not in claude_text, "Methodology must not be in Directory Map in CLAUDE.md"
+
+    agents_text = (repo_root / "AGENTS.md").read_text(encoding="utf-8")
+    assert "- /Methodology" not in agents_text, "Methodology must not be listed as a tracked room in AGENTS.md"
+
+    refs_text = (repo_root / "REFERENCES.md").read_text(encoding="utf-8")
+    assert "](Methodology/" not in refs_text, "REFERENCES.md must not link to private untracked files"
+
+
+def test_plain_english_invariants():
+    """Verify legacy jargon like 'Room', 'phase-gate', and 'Completion Gate' are eliminated."""
+    repo_root = ROOT
+    claude_text = (repo_root / "CLAUDE.md").read_text(encoding="utf-8")
+    assert '"Room"' not in claude_text
+    assert "Tooling Room" not in claude_text
+    assert "Folder Structure (The Map)" not in claude_text
+
+    agents_text = (repo_root / "AGENTS.md").read_text(encoding="utf-8")
+    assert '"Room"' not in agents_text
+
+    issue_tpl = (repo_root / ".github" / "ISSUE_TEMPLATE.md").read_text(encoding="utf-8")
+    assert "Completion Gate" not in issue_tpl
+    assert "phase task" not in issue_tpl
+    assert "phase-gate" not in issue_tpl
+
+    pr_tpl = (repo_root / ".github" / "pull_request_template.md").read_text(encoding="utf-8")
+    assert "phase-gate" not in pr_tpl
+    assert "Acceptance Criteria Verification" in pr_tpl
+    assert "resolves #<issue-number>" in pr_tpl
+    assert pr_tpl.strip().endswith("resolves #<issue-number>")
+
+
+

@@ -1,23 +1,22 @@
-# OpenSourceScout — EXAMPLE config.  Copy to `config.local.yaml` and edit.
+# OpenSourceScout: example configuration. Copy to config.local.yaml and customize.
 # ---------------------------------------------------------------------------
-# criteria.yaml (public) holds the RULES.  This file holds the DATA those rules
-# judge against: your portfolio, your quality bar, your category vocabulary.
-# `config.local.yaml` is git-ignored — it never leaves your machine.
+# criteria.yaml (public) holds the rules. This file holds the data those rules
+# judge against: your portfolio, your quality standards, your category vocabulary.
+# config.local.yaml is git-ignored and stays local to your environment.
 # ---------------------------------------------------------------------------
 
-# Where the project list comes from — ONE store, possibly two readers.
-#   local     -> use existing_projects below (standalone; the default)
+# Where the project list comes from:
+#   local     -> use existing_projects below (standalone; default)
 #   <path>    -> read an external registry instead, e.g. ../my-other-project/projects/
-# Whichever you pick is the single source of truth, so the two can never drift.
-# Auto-detection is deliberately NOT the default: a tool silently judging against
-# a portfolio you didn't know it picked up is how surprises happen.
+# Whichever is selected serves as the source of truth to prevent configuration drift.
+# Auto-detection is disabled by default to prevent unexpected portfolio selection.
 portfolio_source: local
 
 # Judge backend model (optional). Decouples backend model from code.
 # e.g., opencode/deepseek-v4.1-flash-free
 model: opencode/deepseek-v4.1-flash-free
 
-existing_projects:              # for the MERGE question + the `strategic` payoff
+existing_projects:              # for the merge question and strategic payoff evaluation
   - name: example-app
     what: "One sentence: what it does, and for whom."
     stack: [python, fastapi, postgres]
@@ -25,17 +24,17 @@ existing_projects:              # for the MERGE question + the `strategic` payof
     status: "active build"
 
   - name: example-site
-    what: "A second project, so `merge` has somewhere to land."
+    what: "A second project, providing a target for merge evaluations."
     stack: [typescript, nextjs]
     category: content
     status: "live"
 
 standards: >
-  Your quality bar in one sentence — what makes something pass for YOU.
+  Your quality bar in one sentence: what makes something pass for your standards.
   e.g. "solves a real recurring annoyance, and is shippable free in under two weeks".
 
-# Controlled category vocabulary — pick exactly ONE per candidate.
-# Deliberately not developer-only: surface non-dev products too.
+# Controlled category vocabulary: pick exactly one per candidate.
+# Spans both developer tools and non-developer products.
 categories:
   - devtools
   - automation

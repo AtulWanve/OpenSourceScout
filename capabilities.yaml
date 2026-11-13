@@ -1,18 +1,18 @@
-# OpenSourceScout — CONTROLLED VOCABULARY for `provides_features`.
+# OpenSourceScout: controlled vocabulary for `provides_features`.
 # ============================================================================
 # WHY THIS EXISTS
 # provides_features is the parts-bin key: the combination step (criteria.yaml
 # funnel step 4) works by matching a candidate's provides_features against a
-# target's needs_features. That REQUIRES a shared vocabulary.
+# target's needs_features. That requires a shared vocabulary.
 #
 # Without one, it doesn't work at all. Measured on a real 654-candidate corpus:
-# 1136 distinct feature slugs, 95.6% of them used by exactly ONE candidate. Set-cover
-# could never match anything, and the "top" slugs were brand names (`browserbase-api-
-# wrapper`, `stagehand-sdk`) — describing what a repo is CALLED, not what it DOES.
-# That violates the framework's own rule: a feature is what it DOES.
+# 1136 distinct feature slugs, 95.6% of them used by exactly one candidate. Set-cover
+# could never match anything, and the top slugs were brand names (`browserbase-api-
+# wrapper`, `stagehand-sdk`), describing what a repo is named, not what it does.
+# That violates the framework rule: a feature is what it does.
 #
 # HOW TO USE
-#   provides_features:  pick from THIS list only. Coarse on purpose — overlap is the
+#   provides_features:  pick from this list only. Coarse on purpose: overlap is the
 #                       whole point. If nothing fits, propose a new term here (a PR to
 #                       the vocabulary), don't invent a one-off slug in a note.
 #   provides_specifics: free text for the nuance the coarse term loses
@@ -26,7 +26,7 @@ capabilities:
   # ---- agents / orchestration -------------------------------------------
   agent-orchestration: [swarm, multi-agent, coordinator, orchestration, consensus, delegation, subagent]
   agent-harness: [harness, control-layer, agent-runtime, agent-platform, meta-harness]
-  workflow-engine: [workflow, dag, state-machine, process-automation]   # NB: "pipeline" is too generic — it stole rag-pipeline
+  workflow-engine: [workflow, dag, state-machine, process-automation]   # NB: "pipeline" is too generic, conflicted with rag-pipeline
   task-queue: [queue, async-task, job-runner, task-center, scheduler-queue]
   prompt-management: [prompt, prompt-template, prompt-hardening, system-prompt, instruction]
   skill-packaging: [skill, skills, plugin, extension, marketplace, rules-file]
@@ -70,7 +70,7 @@ capabilities:
   data-extraction: [scraping, crawler, parser, ocr, document-parsing, extraction]
   schema-management: [schema, migration, orm, database-schema]
   vector-search: [embedding, vector-db, similarity, hnsw, rerank]
-  rag-pipeline: [rag, retrieval-augmented, chunking]   # NB: "ingestion" is too generic — it stole github-api-ingestion
+  rag-pipeline: [rag, retrieval-augmented, chunking]   # NB: "ingestion" is too generic, conflicted with github-api-ingestion
   database-adapter: [database, storage-engine, kv-store, sql, nosql]
 
   # ---- content / media ---------------------------------------------------
@@ -81,7 +81,7 @@ capabilities:
 
   # ---- infra / integration ----------------------------------------------
   deployment-automation: [deploy, provisioning, infra-as-code, hosting]
-  container-orchestration: [kubernetes, docker, container]   # NB: "cluster" is too generic — it stole cluster-effects
+  container-orchestration: [kubernetes, docker, container]   # NB: "cluster" is too generic, conflicted with cluster-effects
   tunnel-proxy: [tunnel, proxy, gateway, reverse-proxy, ngrok]
   auth-integration: [auth, oauth, sso, identity, credentials]
   notification-integration: [notification, webhook, slack, alerting, chat-integration]

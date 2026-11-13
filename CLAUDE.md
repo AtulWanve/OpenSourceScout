@@ -2,11 +2,11 @@
 
 You are helping the user with the OpenSourceScout project, an open-source scouting framework.
 
-# Folder Structure (The Map)
-This project uses a strict Three-Layer Folder Architecture based on the Interpretable Context Methodology (ICM).
+# Directory Structure
+This project organizes context by directory with a `CONTEXT.md` file in each folder.
 
-**CRITICAL ROUTING INSTRUCTION:** 
-When the user gives you a task, you MUST first determine which "Room" (folder) it belongs to. You must then READ the `CONTEXT.md` in that folder BEFORE taking any action. If a task does not fit any room, ask the user before guessing.
+**TASK NAVIGATION:** 
+When given a task, first determine which directory it belongs to. Read the `CONTEXT.md` in that folder BEFORE taking action. If a task does not fit any directory, ask the user before guessing.
 
 - `/` - Root project files (`CLAUDE.md`, `AGENTS.md`, `README.md`, `CONTEXT.md`).
 - `/setup` - Onboarding and workspace configuration.
@@ -15,16 +15,15 @@ When the user gives you a task, you MUST first determine which "Room" (folder) i
 - `/knowledge` - Repository notes, target definitions, and generated indexes.
 - `/inbox` - Incoming repository digests pending review.
 - `/investigations` - Repository research and capability searches (search `INDEX.md` files here rather than grepping the full repo).
-- `/.claude` - Claude Code configuration, settings, and custom skills.
+- `/.claude` - Claude Code configuration, settings, and custom commands.
 - `/.github` - GitHub Actions workflows and CI automation.
 - `/docs` - Documentation, milestones, and planning notes.
-- `/Methodology` - Reference architecture documentation.
 - `/tests` - Test suite for scripts and tooling.
 
-## Directory Map
+## Directory Structure
 ```text
 .
-├── /.claude                     # Tooling Room
+├── /.claude                     # Tooling and configuration
 │   ├── CONTEXT.md
 │   ├── session_debugging_log.md
 │   └── settings.json
@@ -38,13 +37,14 @@ When the user gives you a task, you MUST first determine which "Room" (folder) i
 │   └── pull_request_template.md
 ├── /docs                        # Documentation and milestones
 │   ├── /milestones
-│   │   └── M0-foundation.md
+│   │   ├── M0-foundation.md
+│   │   └── M0.1-template-and-doc-updates.md
 │   └── CONTEXT.md
 ├── /inbox                       # Incoming repo digests
 │   └── CONTEXT.md
-├── /investigations              # Analyst workspace
+├── /investigations              # Repository research and analysis
 │   └── CONTEXT.md
-├── /knowledge                   # Database
+├── /knowledge                   # Repository notes and indexes
 │   ├── /daily                   # Daily sweep logs
 │   ├── /repos                   # Evaluated repo notes
 │   ├── /targets                 # Build-kit target definitions
@@ -52,12 +52,10 @@ When the user gives you a task, you MUST first determine which "Room" (folder) i
 │   ├── INDEX.md
 │   ├── INDEX-features.md
 │   └── INDEX-inventory.md
-├── /Methodology                 # Reference docs
-│   └── CONTEXT.md
 ├── /prompts                     # AI instructions
 │   ├── CONTEXT.md
 │   └── judge_worker.md
-├── /scripts                     # Engine
+├── /scripts                     # Execution scripts
 │   ├── CONTEXT.md
 │   ├── build_index.py
 │   ├── judge_loop.py
@@ -69,8 +67,12 @@ When the user gives you a task, you MUST first determine which "Room" (folder) i
 ├── /setup                       # Onboarding
 │   └── CONTEXT.md
 ├── /tests                       # Test suite
-│   └── CONTEXT.md
-├── AGENTS.md                  # Non-Claude agent map
+│   ├── CONTEXT.md
+│   ├── test_config_and_indexing.py
+│   ├── test_document_adoption.py
+│   ├── test_opencode_backend.py
+│   └── test_schemas_and_config.py
+├── AGENTS.md                  # Cross-tool guidelines
 ├── CLAUDE.md                  # Project rules (this file)
 ├── CONTEXT.md                 # Root context
 ├── README.md                  # Project overview
@@ -96,9 +98,9 @@ When the user gives you a task, you MUST first determine which "Room" (folder) i
 - Read this file first on every new task.
 - NEVER gather metadata by hand; always use `python scripts/scout.py`.
 - ALWAYS check for `CONTEXT.md` when entering a new folder.
-- If you are lost or do not know how to proceed, re-read this Map.
+- If you are lost or do not know how to proceed, re-read this directory structure.
 - **SYNC RULE (Root):** Any time you modify this `CLAUDE.md` file, you MUST immediately review and update `AGENTS.md` to ensure structural consistency for non-Claude tools.
-- **SYNC RULE (Map):** If you create, delete, or change the purpose of a subfolder, you MUST update the "Folder Structure (The Map)" in this file to reflect the change. Every active room must be on the Map.
+- **SYNC RULE (Directory Structure):** If you create, delete, or change the purpose of a subfolder, you MUST update the "Directory Structure" in this file to reflect the change. Every active folder must be listed.
 - Ask clarifying questions before making assumptions.
 - When you are unsure, say so.
 - Adhere strictly to the project architecture and coding standards.
