@@ -1,26 +1,26 @@
 ---
-# Verdict note — copy per candidate, named after the repo/idea slug.
+# Verdict note: copy per candidate, named after the repo/idea slug.
 # Lives in the single candidate store; `disposition` is what routing decided.
 candidate: "owner/name or idea-slug"
 type: repo                 # repo | idea
 url: ""                    # repo URL, or blank for an idea
 evaluated: null
 judged_by: null             # automated (facts only) | human | ai | automated+human | automated+ai.
-                           # No consumer is privileged — a human routing by hand is as valid as any AI.
+                           # No consumer is privileged: a human routing by hand is as valid as any AI.
 intake: targeted           # targeted = deliberately scouted | bulk = account sweep (scout.py owner --all).
-                           # Both mean "facts, no verdict" until `disposition` is set — but bulk also means
+                           # Both mean "facts, no verdict" until `disposition` is set, but bulk also means
                            # NOBODY HAS LOOKED. Never read a bulk note's silence as a judgement.
 
 disposition: null          # independent | too_big | adopt | merge | upstream_pr | simplify_fork | combined | rejected  ← MIRRORS the top log entry
 status: active             # active | parked_capital   (capital is the LAST check)
-judgments: none              # none | "<N> entries, last <date>" — mirrors the log below, so tooling sees the
-                           # CURRENT verdict AND whether the interpretation has evolved, without parsing the body
+judgments: none              # none | "<N> entries, last <date>" (mirrors the log below, so tooling sees the
+                           # CURRENT verdict AND whether the interpretation has evolved, without parsing the body)
 
-# What capabilities this repo/idea provides. THE key field for the parts bin —
+# What capabilities this repo/idea provides. Key field for the parts bin:
 # it's how a reject gets pulled into a target's build-kit later.
-provides_features: []      # CONTROLLED — pick ONLY from capabilities.yaml. This is what set-cover
+provides_features: []      # CONTROLLED: pick ONLY from capabilities.yaml. This is what set-cover
                            # matches against a target's needs_features; free-text slugs make it useless
-                           # (95.6% singletons measured). No brand names — a feature is what it DOES.
+                           # (95.6% singletons measured). No brand names: a feature is what it DOES.
 provides_specifics: []     # free text for nuance the coarse term loses. Never matched; nothing is lost here.
 
 # --- ASSESSMENT · facts (categorization only; do NOT affect worthiness/routing) ---
@@ -36,7 +36,7 @@ license:
   name: null
   state: null                  # file | declared_only | none
   declared_in: []              # LICENSE file | README | package metadata. NB: the GitHub API only
-                               # detects LICENSE FILES — "no license" there ≠ unlicensed. Read the
+                               # detects LICENSE FILES: "no license" there ≠ unlicensed. Read the
                                # README/metadata. declared_only is a real grant, just missing paperwork.
   attribution_required: null   # must credit original
   copyleft: null               # must open-source your derivative → blocks a closed product
@@ -51,14 +51,14 @@ step1_independent:
   worth_doing: null        # true | false  (reason in prose below)
   solo_ai_scope: null      # true | false
 step1b_too_big:
-  worth_doing: null        # true (always true for too_big — it's worthy but out of scope)
+  worth_doing: null        # true (always true for too_big: it is worthy but out of scope)
   why_too_big: null        # what specifically needs a team (e.g. "ongoing moderation", "multi-platform ops")
 merge:
   target: null             # existing project name, or "build-pipeline" (a strategic:capability merge), or null
   mode: null               # as_is | modify_fully | harvest_parts
   harvest_type: null       # code | blueprint  (blueprint = reimplement; also sidesteps copyleft)
 adopt:
-  serves: null             # product_workflow | build_pipeline   (for disposition: adopt — use as-is, unchanged)
+  serves: null             # product_workflow | build_pipeline   (for disposition: adopt: use as-is, unchanged)
 upstream_pr:
   ux_issue: null           # what specific UX/complexity needs fixing
   pr_scope: null           # rough estimate of what the PR would touch
@@ -76,7 +76,7 @@ tags: []                   # discovery tags, not category
 ## Judgment log
 
 <!-- PREPEND-ONLY, newest first. The TOP entry is the active verdict; the front-matter above mirrors it.
-     Facts (front-matter, + Description/README in a fetched note) sit ABOVE and are IMMUTABLE — a judgment
+     Facts (front-matter, + Description/README in a fetched note) sit ABOVE and are IMMUTABLE: a judgment
      consumes them; only Stage 0 (a re-fetch) edits them.
      Record the OUTCOME of a review, never the discussion: the note accumulates KNOWLEDGE, not a chat log.
 
@@ -86,15 +86,15 @@ tags: []                   # discovery tags, not category
          trigger = initial | new_or_changed_rule | new_project_or_stack | new_target
                    | dependency_or_health_shift | facts_drift | correction
      Body (omit lines that don't apply):
-       context:         criteria@<hash> · portfolio@<date>      — what it was judged AGAINST
+       context:         criteria@<hash> · portfolio@<date>      (what it was judged AGAINST)
        **Conclusion.**  the disposition + the single reason for it            (always)
        **Changed.**     what shifted from the entry below, and why            (a revision)
        **Corrected.**   the assumption that was wrong, now fixed              (trigger: correction)
-       **The move.**    what to do now — or "nothing now" + the trigger that would flip it
+       **The move.**    what to do now, or "nothing now" + the trigger that would flip it
        **Risks.**       licence · staleness · thin moat · single maintainer   (never a reject alone) -->
 
 ### <date> · <disposition>/<status> · judge: <who> · trigger: <trigger>
 context: criteria@<hash> · portfolio@<date>
 **Conclusion.** _the disposition and the single reason for it (walk the funnel: worth doing? solo+AI scope? merge? combine?)._
-**The move.** _what you'd build / fold in / combine, and why now — or "nothing now" + the trigger that would flip it._
+**The move.** _what you'd build / fold in / combine, and why now, or "nothing now" + the trigger that would flip it._
 **Risks.** _licence/legal traps (never a reject alone), integration cost, saturated market, hostile maintainer._

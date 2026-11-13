@@ -24,8 +24,7 @@ gaps: []           # needs_features still uncovered → what to go scout next
 
 ## Why this target
 
-_The pain, who has it, and why the good solutions today are paywalled/closed —
-i.e. why an assembled open alternative is worth it._
+_The pain, who has it, and why the good solutions today are paywalled/closed (why an assembled open alternative is worth it)._
 
 ## Assembly notes
 

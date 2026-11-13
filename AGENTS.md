@@ -5,12 +5,12 @@ This file acts identically to CLAUDE.md for tools that do not automatically load
 
 ## Instructions for the AI
 Before answering or taking action, you MUST read the following context files in the root directory:
-1. `CLAUDE.md` - This is the central Map and Router. It tells you which subfolder to go to based on the user's request.
+1. `CLAUDE.md` - Central project rules and directory structure. It tells you which directory to consult based on the user's request.
 2. `CONTEXT.md` - For understanding the current overarching project state.
 3. `REFERENCES.md` - For background material.
 
-**CRITICAL ROUTING INSTRUCTION:**
-This project relies on the Interpretable Context Methodology (ICM). You MUST read `CLAUDE.md` to find out which "Room" (folder) the user's task belongs in:
+**TASK NAVIGATION:**
+This project organizes context by directory. Check `CLAUDE.md` to determine which folder the user's task belongs in:
 - `/` - Root project files (`CLAUDE.md`, `AGENTS.md`, `README.md`, `CONTEXT.md`, `SPEC.md`, `capabilities.yaml`, `criteria.yaml`, `config.example.yaml`)
 - `/setup` - Onboarding and workspace configuration
 - `/scripts` - Execution engine and Python pipeline scripts
@@ -18,10 +18,9 @@ This project relies on the Interpretable Context Methodology (ICM). You MUST rea
 - `/knowledge` - Repository notes, target definitions, and indexes
 - `/inbox` - Incoming repository digests pending review
 - `/investigations` - Repository research and capability searches (search `INDEX.md`)
-- `/.claude` - Claude Code configuration, settings, and skills
+- `/.claude` - Claude Code configuration, settings, and custom commands
 - `/.github` - GitHub configuration, CI workflows, and issue/PR templates
 - `/docs` - Documentation, milestones, and planning notes
-- `/Methodology` - Reference architecture documentation
 - `/tests` - Test suite for scripts and tooling
 
 Once you enter that folder, you MUST read the `CONTEXT.md` located inside that folder (or the root `CONTEXT.md` if in `/`) before taking action.
